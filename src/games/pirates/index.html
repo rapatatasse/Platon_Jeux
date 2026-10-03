@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pirates des Tables — Apprendre les multiplications en jouant | Platon Jeux</title>
+    <meta name="description" content="Un jeu de pirates en 3D pour apprendre les tables de multiplication : navigue, aborde les navires ennemis et résous les calculs avant la fin du temps. Par Platon Formation.">
+</head>
+<body>
+    <!-- Écran de chargement -->
+    <div id="loading-screen">
+        <div class="loading-title">⚓ Jeu de Pirates</div>
+        <div class="loading-sub">Chargement des mers...</div>
+        <div class="loading-bar-wrap"><div class="loading-bar" id="loading-bar"></div></div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <!-- HUD -->
+    <div id="hud">
+        <div class="hud-panel">
+            <div id="score-display">Score : <span id="score-value">0</span></div>
+            <div id="level-display">Niveau <span id="level-value">1</span> &nbsp;·&nbsp; Prochain : <span id="next-level-value">50</span> pts</div>
+            <div id="multiplier-display"></div>
+        </div>
+        <div class="hud-panel">
+            <div id="health-display">
+                <span class="heart" id="heart-1">❤️</span>
+                <span class="heart" id="heart-2">❤️</span>
+                <span class="heart" id="heart-3">❤️</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Boussole -->
+    <div id="compass">
+        <canvas id="compass-canvas" width="72" height="72"></canvas>
+    </div>
+
+    <!-- Streak -->
+    <div id="streak-display"></div>
+
+    <!-- Minimap -->
+    <div id="minimap-container">
+        <canvas id="minimap" width="155" height="155"></canvas>
+    </div>
+
+    <!-- Message flash -->
+    <div id="message-overlay">
+        <div id="message-text"></div>
+    </div>
+
+    <!-- Légende contrôles -->
+    <div id="controls-hint">
+        ↑ Avancer &nbsp; ↓ Reculer<br>
+        ← Tourner gauche &nbsp; → Tourner droite<br>
+        🎮 Manette supportée
+    </div>
+
+    <!-- Bouton Pause -->
+    <button id="pause-btn" title="Pause (Échap)">&#9646;&#9646;</button>
+
+    <!-- Overlay Pause -->
+    <div id="pause-overlay">
+        <div class="pause-title">⏸ PAUSE</div>
+        <button class="pause-resume-btn" id="resume-btn">▶ Reprendre</button>
+    </div>
+
+    <!-- Bataille -->
+    <div id="battle-modal">
+        <div class="battle-box">
+            <div class="battle-title" id="battle-title">⚔️ BATAILLE !</div>
+            <div class="battle-enemy-info" id="battle-info">Ennemi de niveau <span id="battle-enemy-level">1</span> — Table de <span id="battle-table">2</span></div>
+            <div class="battle-question" id="battle-question">? × ? = ?</div>
+            <div id="battle-timer">⏱ <span id="timer-value">10</span>s</div>
+            <div class="timer-bar-wrap"><div id="timer-bar"></div></div>
+            <input type="number" id="battle-input" placeholder="?" min="0" max="9999" autocomplete="off">
+            <button id="battle-submit">⚓ Attaquer !</button>
+            <div class="battle-hint">Appuyez sur Entrée pour valider</div>
+            <div id="battle-outcome"></div>
+        </div>
+    </div>
+
+    <!-- Résultat bataille -->
+    <div id="battle-result">
+        <div class="result-text" id="result-text"></div>
+        <div class="result-points" id="result-points"></div>
+    </div>
+
+    <!-- Choix récompense île -->
+    <div id="reward-modal">
+        <div class="reward-box">
+            <div class="reward-title">🏆 VICTOIRE !</div>
+            <div class="reward-sub" id="reward-sub">Choisissez votre r&eacute;compense permanente :</div>
+            <div class="reward-buttons">
+                <button class="reward-btn" id="reward-heart-btn">❤️ +1 C&oelig;ur</button>
+                <button class="reward-btn" id="reward-time-btn">⏱ +2 Secondes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over -->
+    <div id="game-over">
+        <div class="game-over-title">💀 GAME OVER</div>
+        <div class="game-over-score">Score final : <span id="final-score">0</span></div>
+        <button id="restart-btn">⚓ Recommencer</button>
+    </div>
+
+    <script type="module" src="./main.js"></script>
+</body>
+</html>

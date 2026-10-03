@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Platon Jeux — Jeux éducatifs en ligne : apprendre le code et les multiplications | Platon Formation</title>
+    <meta name="description" content="Pilote un vaisseau entre les planètes et choisis ton jeu éducatif : PIXEL pour apprendre le JavaScript, Pirates des Tables pour les multiplications. Par Platon Formation." />
+    <meta name="theme-color" content="#e9d9ab" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:site_name" content="Platon Jeux" />
+    <meta property="og:title" content="Platon Jeux — Jeux éducatifs en ligne" />
+    <meta property="og:description" content="Un voyage entre les planètes pour apprendre le code JavaScript et les tables de multiplication en jouant." />
+    <!--SEO_HEAD-->
+    <!--JSONLD-->
+  </head>
+  <body>
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+      <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="4" result="n" />
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="3.5" />
+      </filter>
+    </svg>
+
+    <main>
+      <section id="jeu" class="stage" aria-label="Carte du ciel : pilote le vaisseau pour choisir un jeu">
+        <div id="space" aria-hidden="true"></div>
+        <p class="loading">Platon déroule ses plans…</p>
+        <p class="failed-msg">Le voyage spatial demande WebGL. Utilise le catalogue ci-dessous pour jouer directement.</p>
+
+        <header class="topbar">
+          <div class="brand">
+            <h1>Platon Jeux</h1>
+            <p>Jeux éducatifs pour enfants et adultes</p>
+          </div>
+          <nav class="nav" aria-label="Navigation principale">
+            <a href="#catalogue">Catalogue des jeux</a>
+            <a href="https://www.platonformation.com" target="_blank" rel="noopener">Platon Formation</a>
+            <button id="btn-sound" type="button" aria-pressed="true">Son : oui</button>
+          </nav>
+        </header>
+
+        <div id="hud" class="hud">
+          <div id="hearts" class="hearts" role="img"></div>
+          <div class="score">Points : <span id="score-value">0</span></div>
+        </div>
+
+        <div id="orbit-banner" class="orbit-banner" aria-live="polite"></div>
+
+        <aside id="platon" class="platon" aria-label="Platon, ton guide">
+          <div id="bubble" class="bubble" role="status"></div>
+          <button type="button" aria-label="Demander de l'aide à Platon"><img src="/images/platon.png" alt="Platon, le guide" width="64" height="150" /></button>
+        </aside>
+
+        <div id="orbit-modal" class="orbit-modal" role="dialog" aria-modal="true" aria-labelledby="om-title" hidden>
+          <div class="comic">
+            <img class="om-platon" src="/images/platon_montrant.png" alt="Platon te présente le jeu" width="150" height="212" />
+            <div class="balloon">
+              <p class="om-hello">Voyageur, te voici en orbite !</p>
+              <h2 id="om-title"></h2>
+              <p class="om-tagline"></p>
+              <p class="om-desc"></p>
+              <p class="om-aud"></p>
+              <div class="om-actions">
+                <button id="om-enter" type="button" class="btn btn-main">Entrer dans le jeu</button>
+                <button id="om-stay" type="button" class="btn">Rester dans l'espace</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="controls" aria-hidden="true"><kbd>&uarr;</kbd> avancer &nbsp;·&nbsp; <kbd>&darr;</kbd> demi-tour &nbsp;·&nbsp; <kbd>&larr;</kbd><kbd>&rarr;</kbd> tourner &nbsp;·&nbsp; <kbd>Espace</kbd> tirer</p>
+        <a class="scroll-cue" href="#catalogue">Catalogue des jeux &darr;</a>
+        <div id="flash" class="flash" aria-hidden="true"></div>
+        <div id="warp" class="warp" aria-hidden="true"></div>
+      </section>
+
+      <section id="catalogue" class="sheet" aria-labelledby="catalogue-title">
+        <h2 id="catalogue-title">Catalogue des jeux</h2>
+        <p class="lead">Pas de clavier sous la main ? Choisis directement ton jeu ici. Chaque jeu est une planète à découvrir sur la carte du ciel.</p>
+        <!--CATALOGUE-->
+      </section>
+
+      <section id="platon-formation" class="sheet" aria-labelledby="pf-title">
+        <h2 id="pf-title">Ces jeux sont signés Platon Formation</h2>
+        <div class="pf sketch-box">
+          <p>Platon Formation est un centre de formation qui propose aussi des <strong>formations en ligne</strong>. Ces jeux sont une façon ludique de découvrir notre manière d'enseigner : apprendre par la pratique, à son rythme.</p>
+          <p>Envie d'aller plus loin que le jeu ? Découvre nos formations et nos services.</p>
+          <a class="btn btn-main" href="https://www.platonformation.com" target="_blank" rel="noopener">Découvrir Platon Formation</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>&copy; Platon Formation — Tous droits réservés. Le code source et les contenus de ce site sont protégés.</p>
+      <p><a href="https://www.platonformation.com" target="_blank" rel="noopener">www.platonformation.com</a></p>
+    </footer>
+
+    <noscript><p class="noscript">Ce site utilise JavaScript pour la carte interactive. Le catalogue ci-dessus reste accessible.</p></noscript>
+    <script type="module" src="./hub/main.js"></script>
+  </body>
+</html>

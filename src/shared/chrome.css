@@ -1,0 +1,7 @@
+.platon-chrome {
+  position: fixed; left: 8px; bottom: 6px; z-index: 1000;
+  display: flex; gap: 12px; padding: 3px 12px; border-radius: 14px;
+  background: rgba(30, 22, 10, 0.78); font: 12px/1.6 Georgia, serif;
+}
+.platon-chrome a { color: #ecd9a4; text-decoration: none; opacity: 0.85; }
+.platon-chrome a:hover { opacity: 1; text-decoration: underline; }

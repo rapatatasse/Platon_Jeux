@@ -1,0 +1,26 @@
+{
+  "name": "platon-jeux",
+  "version": "1.0.0",
+  "description": "Plateforme de jeux éducatifs Three.js — Platon Formation (platonformation.com).",
+  "type": "module",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "node server.js",
+    "test": "node --test \"tests/**/*.test.js\""
+  },
+  "allowScripts": {
+    "esbuild@0.25.12": true
+  },
+  "dependencies": {
+    "@fontsource/caveat": "^5.3.0",
+    "@fontsource/im-fell-english": "^5.3.0",
+    "three": "^0.170.0"
+  },
+  "devDependencies": {
+    "vite": "^7.3.5"
+  }
+}

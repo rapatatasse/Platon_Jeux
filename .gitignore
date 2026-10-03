@@ -1,0 +1,29 @@
+# Dépendances et build
+node_modules/
+dist/
+
+# Variables d'environnement et secrets
+.env
+.env.*
+!.env.example
+
+# Journaux
+*.log
+npm-debug.log*
+
+# Système
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Éditeurs
+.idea/
+.vscode/
+*.swp
+
+# Fichiers temporaires Office (présentations ouvertes)
+~$*
+
+# Captures et fichiers temporaires
+*.tmp
+.cache/
