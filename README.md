@@ -106,3 +106,25 @@ Le code envoyé au navigateur ne peut jamais être totalement caché. Mesures en
 
 - Un test de PIXEL échoue déjà dans le projet d'origine : « objectif sandwich / tir ».
 - Pas de commandes tactiles dans le hub (le catalogue permet de lancer les jeux directement).
+
+
+## installe avec SSH infomanik
+1
+Lancez un terminal.
+2
+Envoyez vos fichiers à l'aide de la commande scp en indiquant la source et la destination.
+Commande SCP
+```
+scp -r localmachine/path_to_the_file H2HebszrhbX_tmp_1791141122@57-117936.ssh.hosting-ik.com:sites/jeux.
+->
+scp -r "C:/Users/user/Documents/02 cours stagiaires/00 Code/Platon Jeux/." "H2HebszrhbX_tmp_1791141122@57-117936.ssh.hosting-ik.com:sites/jeux/"
+```
+platonformation.com
+Source locale: “localmachine/path_to_file” - à remplacer par l'emplacement de vos fichiers dans la commande scp ci-dessus.
+Utilisateur + serveur:  H2HebszrhbX_tmp_1791141122@57-117936.ssh.hosting-ik.com
+Chemin de destination:  sites/jeux.platonformation.com
+3
+Saisissez le mot de passe pour finaliser l'envoi des fichiers
+Mot de passe
+334hcclcVR^mrH0vkd
+Une fois fait, revenez sur cette page et lancez l'installation.

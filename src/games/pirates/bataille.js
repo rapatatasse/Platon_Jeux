@@ -12,6 +12,7 @@ export class BatailleSystem {
         this.timerBar   = document.getElementById('timer-bar');
         this.inputEl    = document.getElementById('battle-input');
         this.submitBtn  = document.getElementById('battle-submit');
+        this.keypad     = document.getElementById('numeric-keypad');
         this.enemyLvlEl = document.getElementById('battle-enemy-level');
         this.tableEl    = document.getElementById('battle-table');
         this.titleEl    = document.getElementById('battle-title');
@@ -37,6 +38,15 @@ export class BatailleSystem {
         this.submitBtn.addEventListener('click', () => this._submit());
         this.inputEl.addEventListener('keydown', e => {
             if (e.key === 'Enter') this._submit();
+        });
+        this.keypad?.addEventListener('click', e => {
+            const button = e.target.closest('[data-key]');
+            if (!button) return;
+            const key = button.dataset.key;
+            if (key === 'clear') this.inputEl.value = '';
+            else if (key === 'backspace') this.inputEl.value = this.inputEl.value.slice(0, -1);
+            else if (this.inputEl.value.length < 4) this.inputEl.value += key;
+            this.inputEl.focus();
         });
     }
 

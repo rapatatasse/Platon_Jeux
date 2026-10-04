@@ -11,7 +11,7 @@ export function mountGameChrome({ container = document.body } = {}) {
   bar.innerHTML = `
     <a class="platon-chrome__back" href="/" title="Retourner à la carte stellaire">&larr; Carte stellaire</a>
     <a class="platon-chrome__site" href="${SITE.url}" target="_blank" rel="noopener">${SITE.name}</a>
-    <span class="platon-chrome__by">Créé par <a href="${AUTHOR.url}" target="_blank" rel="noopener">${AUTHOR.name}</a></span>`;
+    <span class="platon-chrome__by">Créé par <a href="${AUTHOR.url}" target="_blank" rel="noopener">${AUTHOR.name}</a> Version ${SITE.version}</span>`;
   container.appendChild(bar);
   return bar;
 }

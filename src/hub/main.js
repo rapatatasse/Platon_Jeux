@@ -10,6 +10,7 @@ import { Keyboard } from '../shared/Keyboard.js';
 import { Music } from '../shared/Music.js';
 import { loadTextures } from '../shared/loadTextures.js';
 import { startLoop } from '../shared/loop.js';
+import { bindTouchControls } from '../shared/TouchControls.js';
 
 const BASE = import.meta.env.BASE_URL;
 const STEP = 1 / 60;   // pas de simulation fixe : évite qu'une balle rapide traverse un astéroïde
@@ -35,6 +36,11 @@ async function boot() {
   const music = new Music();
   const keys = new Keyboard();
   const modal = new OrbitModal(document.getElementById('orbit-modal'), game);
+  const touchInput = new Set();
+  bindTouchControls(document.getElementById('touch-controls'), {
+    onState: (state) => { touchInput.clear(); state.forEach((code) => touchInput.add(code)); },
+    onAction: (action) => { if (action === 'uturn' && !modal.isOpen) game.uturn(); },
+  });
   keys.onPress('ArrowDown', () => !modal.isOpen && game.uturn());
   stage.classList.add('ready');
 
@@ -81,8 +87,10 @@ async function boot() {
   startLoop((dt) => {
     if (!visible) return;
     if (modal.isOpen) { view.update(0); return; }
-    const turn = (keys.isDown('ArrowLeft') ? 1 : 0) - (keys.isDown('ArrowRight') ? 1 : 0);
-    game.setInput(turn, keys.isDown('ArrowUp') ? 1 : 0, keys.isDown('Space'));
+    const turn = (keys.isDown('ArrowLeft') || touchInput.has('left') ? 1 : 0)
+      - (keys.isDown('ArrowRight') || touchInput.has('right') ? 1 : 0);
+    game.setInput(turn, keys.isDown('ArrowUp') || touchInput.has('up') ? 1 : 0,
+      keys.isDown('Space') || touchInput.has('fire'));
     acc += dt;
     while (acc >= STEP) { game.update(STEP); acc -= STEP; }
     view.update(dt);

@@ -56,6 +56,12 @@
         ← Tourner gauche &nbsp; → Tourner droite<br>
         🎮 Manette supportée
     </div>
+    <div id="touch-controls" class="touch-controls" aria-label="Commandes tactiles du bateau">
+        <button type="button" data-touch="left" aria-label="Tourner à gauche">←</button>
+        <button type="button" data-touch="up" aria-label="Avancer">↑</button>
+        <button type="button" data-touch="right" aria-label="Tourner à droite">→</button>
+        <button type="button" data-touch="down" aria-label="Reculer">↓</button>
+    </div>
 
     <!-- Bouton Pause -->
     <button id="pause-btn" title="Pause (Échap)">&#9646;&#9646;</button>
@@ -74,7 +80,13 @@
             <div class="battle-question" id="battle-question">? × ? = ?</div>
             <div id="battle-timer">⏱ <span id="timer-value">10</span>s</div>
             <div class="timer-bar-wrap"><div id="timer-bar"></div></div>
-            <input type="number" id="battle-input" placeholder="?" min="0" max="9999" autocomplete="off">
+            <input type="number" id="battle-input" placeholder="?" min="0" max="9999" autocomplete="off" inputmode="numeric">
+            <div id="numeric-keypad" class="numeric-keypad" aria-label="Clavier numérique">
+                <button type="button" data-key="1">1</button><button type="button" data-key="2">2</button><button type="button" data-key="3">3</button>
+                <button type="button" data-key="4">4</button><button type="button" data-key="5">5</button><button type="button" data-key="6">6</button>
+                <button type="button" data-key="7">7</button><button type="button" data-key="8">8</button><button type="button" data-key="9">9</button>
+                <button type="button" data-key="clear">C</button><button type="button" data-key="0">0</button><button type="button" data-key="backspace">⌫</button>
+            </div>
             <button id="battle-submit">⚓ Attaquer !</button>
             <div class="battle-hint">Appuyez sur Entrée pour valider</div>
             <div id="battle-outcome"></div>

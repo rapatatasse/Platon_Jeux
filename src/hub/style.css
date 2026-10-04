@@ -39,6 +39,12 @@ html { scroll-behavior: smooth; }
 .platon.talking .bubble { opacity: 1; transform: none; }
 
 .controls { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); margin: 0; font-size: 20px; opacity: 0.85; white-space: nowrap; pointer-events: none; }
+.touch-controls { position: absolute; right: 18px; bottom: 14px; display: grid; grid-template-columns: repeat(3, 48px); gap: 6px; z-index: 4; }
+.touch-controls button { width: 48px; height: 44px; border: 2px solid var(--ink); border-radius: 10px; background: rgba(255, 248, 225, 0.82); color: var(--ink); font: 28px/1 var(--title); touch-action: none; user-select: none; -webkit-user-select: none; }
+.touch-controls button:nth-child(4) { grid-column: 1 / 3; width: 102px; font-size: 21px; }
+.touch-controls button:nth-child(5) { grid-column: 3; grid-row: 2; }
+.touch-controls button.pressed { background: var(--rust); color: #fff8e1; transform: translateY(2px); }
+.stage.modal-open .touch-controls { display: none; }
 .scroll-cue { position: absolute; bottom: 14px; right: 18px; font-size: 22px; text-decoration: none; color: var(--ink); }
 .scroll-cue:hover { color: var(--rust); }
 
@@ -90,6 +96,8 @@ html { scroll-behavior: smooth; }
   .platon img { height: 110px; }
   .bubble { margin-bottom: 50px; font-size: 19px; }
 }
+
+@media (hover: hover) and (pointer: fine) { .touch-controls { display: none; } }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

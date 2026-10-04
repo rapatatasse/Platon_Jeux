@@ -17,6 +17,7 @@ import { canvasTexture } from '../../shared/canvasTexture.js';
 import { startLoop } from '../../shared/loop.js';
 import { Keyboard } from '../../shared/Keyboard.js';
 import { mountGameChrome } from '../../shared/chrome.js';
+import { bindTouchControls } from '../../shared/TouchControls.js';
 
 // ── État global ──────────────────────────────────────────────
 let scene, camera, renderer, viewAspect = 1;
@@ -39,6 +40,7 @@ let bonusSeconds   = 0;  // secondes supplémentaires gagnables sur les îles
 let maxHealthBonus = 0;  // coeurs supplémentaires gagnables sur les îles
 
 const input = { forward: false, backward: false, left: false, right: false };
+const touchInput = new Set();
 
 // ── Point d'entrée ───────────────────────────────────────────
 mountGameChrome();
@@ -323,13 +325,16 @@ const keys = new Keyboard();
 
 function _bindInput() {
     keys.onPress('Escape', _togglePause);
+    bindTouchControls(document.getElementById('touch-controls'), {
+        onState: state => { touchInput.clear(); state.forEach(code => touchInput.add(code)); },
+    });
 }
 
 function _readInput() {
-    input.forward  = keys.isDown('ArrowUp', 'KeyW');
-    input.backward = keys.isDown('ArrowDown', 'KeyS');
-    input.left     = keys.isDown('ArrowLeft', 'KeyA');
-    input.right    = keys.isDown('ArrowRight', 'KeyD');
+    input.forward  = keys.isDown('ArrowUp', 'KeyW') || touchInput.has('up');
+    input.backward = keys.isDown('ArrowDown', 'KeyS') || touchInput.has('down');
+    input.left     = keys.isDown('ArrowLeft', 'KeyA') || touchInput.has('left');
+    input.right    = keys.isDown('ArrowRight', 'KeyD') || touchInput.has('right');
     _readGamepad();
 }
 

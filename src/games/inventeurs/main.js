@@ -11,6 +11,7 @@ import { Music } from '../../shared/Music.js';
 import { loadTextures } from '../../shared/loadTextures.js';
 import { startLoop } from '../../shared/loop.js';
 import { mountGameChrome } from '../../shared/chrome.js';
+import { bindTouchControls } from '../../shared/TouchControls.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  RÉGLAGES DU JEU — modifie ces valeurs pour changer les règles
@@ -78,6 +79,11 @@ async function boot() {
   const sounds = new Sounds();
   const music = new Music();
   const keys = new Keyboard();
+  const touchInput = new Set();
+  bindTouchControls(document.getElementById('touch-controls'), {
+    onState: (state) => { touchInput.clear(); state.forEach((code) => touchInput.add(code)); },
+    onAction: (action) => { if (action === 'uturn') game.uturn(); },
+  });
   stage.classList.add('ready');
 
   const kmPerUnit = 40075 / (world.halfW * 2);   // tour de la Terre / largeur de la carte
@@ -132,12 +138,14 @@ async function boot() {
       return li;
     }));
     $('choose-count').textContent = `${game.deliveredCount} / ${LEVEL.deliveriesToWin} inventions livrées.`;
+    stage.classList.remove('touch-flying');
     show($('choose'));
     $('choices').querySelector('button')?.focus();
   });
 
   events.on('target', ({ country }) => {
     hide($('choose'));
+    stage.classList.add('touch-flying');
     view.setTarget(country);
     $('compass-name').textContent = country.name;
     show($('compass')); show($('controls'));
@@ -146,6 +154,7 @@ async function boot() {
 
   events.on('delivered', ({ country, invention, count }) => {
     view.setTarget(null);
+    stage.classList.remove('touch-flying');
     view.markDelivered(country);
     hide($('compass')); hide($('controls'));
     $('count-v').textContent = count;
@@ -159,6 +168,7 @@ async function boot() {
 
   const endScreen = ({ won, count, timeUsed }) => {
     view.setTarget(null);
+    stage.classList.remove('touch-flying');
     hide($('compass')); hide($('controls')); hide($('hud'));
     const hasNext = won && levelNo < GAME.levels.length;
     $('end-title').textContent = !won ? 'Le temps est écoulé…'
@@ -190,8 +200,9 @@ async function boot() {
   let needleDeg = 0, needleGoal = 0, needleTimer = 0;   // aiguille affolée (niveau 2)
   startLoop((dt) => {
     const flying = game.state === 'flying';
-    const turn = (keys.isDown('ArrowLeft') ? 1 : 0) - (keys.isDown('ArrowRight') ? 1 : 0);
-    const thrust = keys.isDown('ArrowUp') ? 1 : 0;
+    const turn = (keys.isDown('ArrowLeft') || touchInput.has('left') ? 1 : 0)
+      - (keys.isDown('ArrowRight') || touchInput.has('right') ? 1 : 0);
+    const thrust = keys.isDown('ArrowUp') || touchInput.has('up') ? 1 : 0;
     game.update(dt, { turn, thrust });
     view.update(dt, flying && thrust > 0);
 

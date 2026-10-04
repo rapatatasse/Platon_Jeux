@@ -41,6 +41,7 @@ export const GAMES = [
 export const SITE = {
   name: 'Platon Formation',
   url: 'https://www.platonformation.com',
+  version: '1.2',
 };
 
 export const AUTHOR = {
