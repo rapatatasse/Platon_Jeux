@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Les Inventeurs — Apprendre la géographie et l'histoire des inventions | Platon Jeux</title>
+    <meta name="description" content="Aide Platon à redonner leurs inventions aux inventeurs du monde entier : pilote le vaisseau, trouve le bon pays sur la carte et apprends qui a inventé quoi, et quand. Par Platon Formation." />
+  </head>
+  <body>
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+      <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="4" result="n" />
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="3.5" />
+      </filter>
+    </svg>
+
+    <main id="stage" class="stage">
+      <div id="map" aria-hidden="true"></div>
+      <p class="loading">Platon déroule la mappemonde…</p>
+
+      <div id="hud" class="hud" hidden>
+        <div class="level">Niveau <span id="level-v">1</span></div>
+        <div class="count">Inventions livrées : <strong id="count-v">0</strong> / <span id="goal">20</span></div>
+        <div id="timer" class="timer" role="timer">5:00</div>
+      </div>
+
+      <aside id="compass" class="compass" aria-label="Boussole vers le pays à atteindre" hidden>
+        <svg viewBox="-60 -60 120 120" aria-hidden="true">
+          <circle r="54" class="c-ring" /><circle r="46" class="c-ring thin" />
+          <text y="-36" class="c-n">N</text>
+          <g id="needle"><path d="M0,-44 L9,2 L0,-6 L-9,2 Z" class="c-arrow" /><path d="M0,30 L0,-6" class="c-tail" /></g>
+          <circle r="3.5" class="c-hub" />
+          <path d="M-30,-34 L-12,-14 L-22,-4 L-6,12" class="c-crack" />
+        </svg>
+        <div class="smokes" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <p id="compass-name" class="c-name"></p>
+        <p id="compass-dist" class="c-dist"></p>
+      </aside>
+
+      <p id="controls" class="controls" hidden aria-hidden="true"><kbd>&uarr;</kbd> avancer &nbsp;·&nbsp; <kbd>&darr;</kbd> demi-tour &nbsp;·&nbsp; <kbd>&larr;</kbd><kbd>&rarr;</kbd> tourner</p>
+
+      <section id="intro" class="overlay" aria-labelledby="intro-title">
+        <div class="comic">
+          <img src="/images/platon_montrant.png" alt="Platon" width="150" height="212" />
+          <div class="balloon">
+            <h2 id="intro-title">Les Inventeurs</h2>
+            <div id="intro-story"></div>
+            <p class="goal">Objectif : <strong id="intro-goal"></strong></p>
+            <div class="actions"><button id="btn-start" type="button" class="btn btn-main">Décoller !</button></div>
+            <p class="hint">Entrée pour commencer</p>
+            <nav id="levels" class="levels" aria-label="Choisir le niveau"></nav>
+          </div>
+        </div>
+      </section>
+
+      <section id="choose" class="overlay" aria-labelledby="choose-title" hidden>
+        <div class="takeoff">
+          <h2 id="choose-title">Où livrer la prochaine invention ?</h2>
+          <p class="sub">Choisis un pays, puis trouve-le sur la carte. <span id="choose-count"></span></p>
+          <div class="ship-wrap">
+            <img class="ship-side" src="/images/vaisseau.png" alt="Le vaisseau de Platon prêt à décoller" width="320" />
+            <svg class="ground" viewBox="0 0 900 140" aria-hidden="true" preserveAspectRatio="none">
+              <path d="M0,140 L0,70 Q450,-10 900,70 L900,140 Z" class="g-fill" /><path d="M0,70 Q450,-10 900,70" class="g-line" />
+              <path d="M120,66 l0,-18 M118,56 l-10,-8 M122,56 l10,-8 M780,66 l0,-16 M778,58 l-9,-7 M782,58 l9,-7 M300,50 l60,0 M520,46 l70,0" class="g-line thin" />
+            </svg>
+          </div>
+          <ul id="choices" class="choices"></ul>
+          <p class="hint">Touches 1 à 5, ou clique sur un pays</p>
+        </div>
+      </section>
+
+      <section id="delivery" class="overlay" aria-labelledby="delivery-title" hidden>
+        <div class="delivery">
+          <div class="d-scene">
+            <svg class="d-ground" viewBox="0 0 900 120" aria-hidden="true" preserveAspectRatio="none">
+              <path d="M0,120 L0,50 Q450,-10 900,50 L900,120 Z" class="g-fill" /><path d="M0,50 Q450,-10 900,50" class="g-line" />
+            </svg>
+            <div class="ray" aria-hidden="true"><img src="/images/inventeurs/rayon.png" alt="" /></div>
+            <img class="ship-side" src="/images/vaisseau.png" alt="Le vaisseau survole le pays" width="300" />
+          </div>
+          <div class="d-text sketch-box">
+            <p class="d-country" id="delivery-title"></p>
+            <p class="d-sentence" id="delivery-sentence"></p>
+            <p class="d-desc" id="delivery-desc"></p>
+            <div class="actions"><button id="btn-continue" type="button" class="btn btn-main">Continuer</button></div>
+            <p class="hint">Entrée pour continuer — le chronomètre est en pause</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="end" class="overlay" aria-labelledby="end-title" hidden>
+        <div class="comic">
+          <img id="end-platon" src="/images/platon.png" alt="Platon" width="100" height="231" />
+          <div class="balloon">
+            <h2 id="end-title"></h2>
+            <p id="end-text"></p>
+            <ul id="end-list" class="recap"></ul>
+            <div class="actions">
+              <a id="btn-next" class="btn btn-main" href="?niveau=2" hidden>Niveau suivant</a>
+              <button id="btn-replay" type="button" class="btn">Rejouer</button>
+              <a class="btn" href="/">Retour à la carte stellaire</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

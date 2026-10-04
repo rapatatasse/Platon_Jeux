@@ -7,7 +7,8 @@ La page d'accueil est elle-même un jeu : on pilote un vaisseau sur une carte du
 |---|---|---|
 | PIXEL | `/games/pixel/` | Apprendre le JavaScript (fonctions, boucles) en pilotant un pixel en 3D |
 | Pirates des Tables | `/games/pirates/` | Apprendre les multiplications en abordant des navires |
-| 3 autres | — | « En téraformation » (bientôt) |
+| Les Inventeurs | `/games/inventeurs/` | Géographie et histoire des inventions : livrer 20 inventions en 5 minutes en volant vers le bon pays |
+| 2 autres | — | « En téraformation » (bientôt) |
 
 ## Commandes
 
@@ -26,6 +27,7 @@ npm start          # sert dist/ en production (port = variable PORT, 3000 par d�
 ## Contrôles
 
 - Hub : **↑** avancer, **↓** demi-tour, **←/→** tourner, **Espace** tirer. Entrer dans l'anneau d'une planète ouverte ouvre une modale où Platon présente le jeu (bulle de BD) avec les boutons « Entrer dans le jeu » (Entrée) et « Rester dans l'espace » (Échap).
+- Les Inventeurs : mêmes commandes que le hub (**↑** avancer, **↓** demi-tour, **←/→** tourner), touches **1 à 5** pour choisir le pays, **Entrée** pour continuer.
 - Pirates : flèches (ou manette), `Échap` = pause.
 - PIXEL : tout passe par le terminal à droite (`help()`).
 
@@ -43,17 +45,28 @@ src/
   games/
     pixel/              core/ (logique pure), render/, ui/, api/
     pirates/            modules ES (config, bateau, ennemis, bataille, carte, ui…)
-  shared/               code commun : createRenderer, loop, Keyboard, Music, SoundBox,
+    inventeurs/         main.js (RÉGLAGES en tête de fichier), inventions.js (pays, inventeurs, dates),
+                        worldGeo.js (généré depuis world.svg), core/ (logique pure), render/
+  shared/               code commun : createRenderer, loop, Keyboard, Music, SoundBox, ShipPhysics,
+                        sketch (dessins « croquis »), theme.css/js (style parchemin commun),
                         events (Emitter), loadTextures, canvasTexture, chrome (barre « retour »),
                         games.js (catalogue = source unique)
 public/                 images/ (vaisseau, Platon, bateaux) et audio/
 docs/                   notes d'origine (todo), présentation PIXEL, ressources non utilisées
+scripts/buildWorld.mjs     world.svg -> src/games/inventeurs/worldGeo.js
 vite-plugins/platonSeo.js   catalogue HTML, JSON-LD, sitemap.xml, robots.txt
 server.js               serveur Node de production
 tests/                  pixel.test.js, hub.test.js
 ```
 
 Règle d'architecture : chaque `core/` ne dépend ni de Three.js ni du DOM ; le rendu écoute les évènements émis par la logique.
+
+## Jeu « Les Inventeurs » : régler et enrichir
+
+- **Niveaux** : tableau `levels` du bloc `GAME` (niveau 1 normal ; 2 boussole cassée, fumée et aiguille folle mais km exacts ; 3 carte sans noms ni rond de destination et boussole réduite aux km, via `compass: 'ok' | 'broken' | 'kmOnly'`). Accès direct : `?niveau=2`. Chaque niveau peut redéfinir `deliveriesToWin` et `timeLimitSec`.
+- **Règles** (nombre d'inventions, durée, nombre de pays proposés, vitesse du vaisseau, zoom) : bloc `GAME` au début de `src/games/inventeurs/main.js`.
+- **Contenu pédagogique** : `src/games/inventeurs/inventions.js`. Pour ajouter une invention, ajouter une entrée `{ inventor, invention, year, description }` à un pays ; pour un nouveau pays, ajouter son code ISO à 2 lettres (il doit exister dans la carte).
+- **Carte** : `public/images/world.svg` (Simplemaps, licence MIT, mention d'attribution conservée). Si elle change : `node scripts/buildWorld.mjs` régénère `worldGeo.js`. Aucun autre fichier de carte n'est nécessaire.
 
 ## Ajouter un jeu
 

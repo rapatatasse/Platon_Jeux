@@ -1,0 +1,116 @@
+html, body { height: 100%; }
+body { overflow: hidden; }
+button.btn { background: none; border: none; cursor: pointer; }
+.btn:focus-visible { outline: 2px dashed var(--rust); outline-offset: 3px; }
+.hint { font-size: 17px; opacity: 0.65; margin: 6px 0 0; }
+
+.stage { position: relative; height: 100vh; height: 100svh; overflow: hidden; }
+#map { position: absolute; inset: 0; }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; font-size: 30px; pointer-events: none; }
+.stage.ready .loading { display: none; }
+
+/* HUD */
+.hud { position: absolute; top: 12px; left: 18px; display: grid; gap: 0; pointer-events: none; }
+.hud[hidden], .compass[hidden], .controls[hidden] { display: none; }
+.count { font-size: 26px; }
+.timer { font-family: var(--title); font-size: 54px; line-height: 1; }
+.timer.low { color: var(--rust); animation: pulse 1s infinite; }
+@keyframes pulse { 50% { opacity: 0.55; } }
+.controls { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); margin: 0; font-size: 20px; opacity: 0.85; white-space: nowrap; pointer-events: none; }
+
+/* Boussole */
+.compass { position: absolute; top: 12px; right: 18px; width: 160px; padding: 4px 6px 6px; text-align: center; pointer-events: none; background: rgba(233, 217, 171, 0.88); border: 2px solid var(--ink); border-radius: 14px; }
+.compass svg { width: 120px; height: 120px; display: block; margin: 0 auto; filter: url(#wobble); }
+.c-ring { fill: rgba(255, 248, 225, 0.8); stroke: var(--ink); stroke-width: 2.5; }
+.c-ring.thin { fill: none; stroke-width: 1; stroke-dasharray: 3 4; }
+.c-n { font-family: var(--title); font-size: 16px; fill: var(--ink); text-anchor: middle; }
+.c-arrow { fill: var(--rust); stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
+.c-tail { stroke: var(--ink); stroke-width: 2; }
+.c-hub { fill: var(--ink); }
+#needle { transition: transform 0.08s linear; }
+.c-name { margin: 2px 0 0; font-family: var(--title); font-size: 24px; line-height: 1.05; }
+.c-dist { margin: 0; font-size: 20px; color: var(--rust); }
+
+/* Écrans superposés */
+.overlay { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(58, 40, 19, 0.38); z-index: 5; overflow: auto; }
+.overlay[hidden] { display: none; }
+.balloon h2 { margin: 0 0 6px; }
+.balloon p { margin: 0 0 6px; }
+.balloon .goal { color: var(--rust); font-size: 26px; }
+.actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+
+/* Choix du pays : le vaisseau prêt à décoller au-dessus de la Terre */
+.takeoff { width: min(920px, 100%); text-align: center; background: rgba(233, 217, 171, 0.94); border: 3px solid var(--ink); border-radius: 18px; padding: 16px 18px 14px; box-shadow: 4px 5px 0 rgba(58, 40, 19, 0.35); animation: pop 0.25s ease-out; }
+.takeoff h2 { margin: 0; font-size: 38px; }
+.takeoff .sub { margin: 0 0 4px; }
+.ship-wrap { position: relative; height: 210px; }
+.ship-side { display: block; max-width: 70%; height: auto; position: absolute; left: 50%; top: 0; transform: translateX(-50%); animation: bob 2.4s ease-in-out infinite; filter: drop-shadow(2px 4px 0 rgba(58, 40, 19, 0.25)); }
+@keyframes bob { 50% { transform: translateX(-50%) translateY(-8px); } }
+.ground { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 90px; }
+.g-fill { fill: rgba(63, 143, 138, 0.28); }
+.g-line { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linecap: round; filter: url(#wobble); }
+.g-line.thin { stroke-width: 2; }
+.choices { list-style: none; margin: 8px 0 0; padding: 0; display: flex; gap: 8px 14px; justify-content: center; flex-wrap: wrap; }
+.choices .btn { font-size: 28px; padding: 6px 20px; }
+.choices .btn small { font-size: 18px; opacity: 0.6; margin-right: 6px; }
+
+/* Livraison : rayon du vaisseau vers le pays */
+.delivery { width: min(900px, 100%); display: grid; gap: 10px; animation: pop 0.25s ease-out; }
+.d-scene { position: relative; height: min(340px, 46vh); background: rgba(233, 217, 171, 0.94); border: 3px solid var(--ink); border-radius: 18px; overflow: hidden; box-shadow: 4px 5px 0 rgba(58, 40, 19, 0.35); }
+.d-scene .ship-side { top: 4px; width: min(270px, 50%); max-width: none; z-index: 2; }
+.ray { position: absolute; left: 0; right: 0; top: 30%; height: 66%; display: flex; justify-content: center; transform-origin: top; animation: ray 1s ease-out both; }
+.ray img { height: 100%; width: auto; max-width: 96%; clip-path: polygon(50% 1%, 99% 92%, 99% 100%, 1% 100%, 1% 92%); }
+@keyframes ray { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
+.d-ground { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 70px; }
+.d-text { padding: 14px 24px; background: rgba(255, 248, 225, 0.94); text-align: center; }
+.d-country { margin: 0; font-family: var(--title); font-size: 34px; color: var(--rust); }
+.d-sentence { margin: 2px 0 4px; font-size: 30px; line-height: 1.2; }
+.d-desc { margin: 0; font-size: 22px; opacity: 0.85; }
+
+/* Fin de partie */
+.recap { list-style: none; margin: 8px 0 0; padding: 0; max-height: 28vh; overflow: auto; font-size: 19px; text-align: left; columns: 2; column-gap: 24px; }
+.recap li { break-inside: avoid; margin-bottom: 2px; }
+.recap b { font-weight: 700; }
+.stage:not(.playing) .controls { display: none; }
+
+@media (max-width: 720px) {
+  .timer { font-size: 40px; }
+  .count { font-size: 20px; }
+  .compass { width: 110px; } .compass svg { width: 90px; height: 90px; }
+  .controls { display: none; }
+  .ship-wrap { height: 160px; }
+  .recap { columns: 1; }
+}
+
+.sound { position: absolute; right: 18px; bottom: 8px; background: none; border: none; font: inherit; font-size: 20px; color: var(--ink); cursor: pointer; z-index: 6; }
+.sound:hover { color: var(--rust); }
+
+.btn[hidden] { display: none; }
+.hud .level { font-family: var(--title); font-size: 22px; color: var(--rust); }
+.levels { display: flex; gap: 8px; justify-content: center; align-items: center; margin-top: 6px; font-size: 18px; }
+.levels::before { content: 'Niveau :'; opacity: 0.65; }
+.levels a { display: grid; place-items: center; width: 30px; height: 30px; border: 2px solid var(--ink); border-radius: 50%; color: var(--ink); text-decoration: none; }
+.levels a:hover { background: rgba(140, 59, 31, 0.15); }
+.levels a.current { background: var(--ink); color: #fff9e3; }
+
+/* Boussole cassée (niveau 2) : vitre fissurée, fumée, aiguille affolée */
+.c-crack { display: none; fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; opacity: 0.8; }
+.compass.broken .c-crack { display: block; }
+.compass.broken .c-arrow { fill: #6b6b6b; }
+.compass.broken .c-dist { animation: jitter 0.25s infinite; }
+.compass.broken { animation: shake 0.6s infinite; }
+@keyframes jitter { 50% { transform: translateX(2px); } }
+@keyframes shake { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(1px, -1px); } 75% { transform: translate(-1px, 1px); } }
+.smokes { display: none; position: absolute; left: 0; right: 0; top: 10px; height: 0; pointer-events: none; }
+.compass.broken .smokes { display: block; }
+.smokes i { position: absolute; left: 50%; top: 0; width: 34px; height: 34px; margin-left: -17px; border-radius: 50%; background: radial-gradient(circle, rgba(55, 48, 42, 0.9), rgba(55, 48, 42, 0) 72%); opacity: 0; animation: smoke 2.4s ease-out infinite; }
+.smokes i:nth-child(1) { --dx: -22px; animation-delay: 0s; } .smokes i:nth-child(2) { --dx: 10px; animation-delay: 0.4s; }
+.smokes i:nth-child(3) { --dx: -6px; animation-delay: 0.8s; } .smokes i:nth-child(4) { --dx: 26px; animation-delay: 1.2s; }
+.smokes i:nth-child(5) { --dx: -30px; animation-delay: 1.6s; } .smokes i:nth-child(6) { --dx: 4px; animation-delay: 2s; }
+@keyframes smoke { 0% { transform: translate(0, 62px) scale(0.5); opacity: 0; } 20% { opacity: 1; } 100% { transform: translate(var(--dx), -34px) scale(2.2); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .compass.broken, .compass.broken .c-dist { animation: none; } }
+
+/* Niveau 3 : plus de flèche, seulement la distance */
+.compass.km-only #needle, .compass.km-only .c-n { display: none; }
+.compass.km-only .c-dist { font-size: 26px; }
+.compass.broken .c-dist { animation: none; }

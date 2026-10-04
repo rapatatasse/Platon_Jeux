@@ -5,3 +5,4 @@
 }
 .platon-chrome a { color: #ecd9a4; text-decoration: none; opacity: 0.85; }
 .platon-chrome a:hover { opacity: 1; text-decoration: underline; }
+.platon-chrome__by { color: #ecd9a4; opacity: 0.85; }

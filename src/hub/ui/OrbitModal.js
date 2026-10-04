@@ -36,11 +36,13 @@ export class OrbitModal {
     this.desc.textContent = planet.description;
     this.audience.textContent = planet.audience;
     this.root.hidden = false;
+    this.root.parentElement.classList.add('modal-open');
     this.enterBtn.focus();
   }
 
   close() {
     this.root.hidden = true;
+    this.root.parentElement.classList.remove('modal-open');
   }
 
   enter() {

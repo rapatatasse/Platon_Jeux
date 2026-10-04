@@ -1,4 +1,4 @@
-import { GAMES, SITE } from '../src/shared/games.js';
+import { GAMES, SITE, AUTHOR } from '../src/shared/games.js';
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -32,7 +32,7 @@ export default function platonSeo({ siteUrl = process.env.SITE_URL?.replace(/\/$
     const org = { '@type': 'EducationalOrganization', name: SITE.name, url: SITE.url };
     const graph = [
       org,
-      { '@type': 'WebSite', name: 'Platon Jeux', inLanguage: 'fr', publisher: org, ...(abs('/') && { url: abs('/') }) },
+      { '@type': 'WebSite', name: 'Platon Jeux', inLanguage: 'fr', publisher: org, author: { '@type': 'Person', name: AUTHOR.name, url: AUTHOR.url }, ...(abs('/') && { url: abs('/') }) },
       {
         '@type': 'ItemList',
         name: 'Catalogue des jeux éducatifs Platon Jeux',

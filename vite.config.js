@@ -13,6 +13,7 @@ const pages = {
   hub: resolve(root, 'index.html'),
   pixel: resolve(root, 'games/pixel/index.html'),
   pirates: resolve(root, 'games/pirates/index.html'),
+  inventeurs: resolve(root, 'games/inventeurs/index.html'),
 };
 
 export default defineConfig({

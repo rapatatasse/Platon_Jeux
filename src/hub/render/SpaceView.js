@@ -5,7 +5,7 @@ import { WORLD, HOME } from '../core/SpaceGame.js';
 import {
   planetTexture, labelTexture, orbitTexture, asteroidTexture, enemyTexture,
   bulletTexture, shockwaveTexture, debrisTexture, inkDotTexture, worldTexture, makeRng,
-} from './sketch.js';
+} from '../../shared/sketch.js';
 
 const Z = { world: -5, orbit: -4, planet: -3, label: -2.9, asteroid: -2, bullet: -1, enemy: 0, ship: 1, fx: 2 };
 const VIEW_HEIGHT = 620;   // unités monde visibles en hauteur

@@ -1,5 +1,6 @@
 import { Emitter } from '../../shared/events.js';
 import { GAMES } from '../../shared/games.js';
+import { stepShip, startUTurn } from '../../shared/ShipPhysics.js';
 
 /**
  * Logique du hub : un vaisseau, des planètes (une par jeu), des astéroïdes et quelques vaisseaux ennemis.
@@ -109,7 +110,7 @@ export class SpaceGame {
 
   /** Demi-tour rapide (flèche bas). */
   uturn() {
-    if (this.state === 'flying' && this.ship.turnLeft <= 0) this.ship.turnLeft = Math.PI;
+    if (this.state === 'flying') startUTurn(this.ship);
   }
 
   // ───────────────────────────── boucle ─────────────────────────────
@@ -138,28 +139,8 @@ export class SpaceGame {
 
   updateShip(dt) {
     const s = this.ship;
-    const { turn, thrust } = this.input;
-    if (s.turnLeft > 0) {
-      const step = Math.min(s.turnLeft, CFG.ship.uturnSpeed * dt);
-      s.dir += step; s.turnLeft -= step;
-    } else {
-      s.dir += turn * CFG.ship.turnSpeed * dt;
-    }
-    if (thrust > 0) {
-      s.vx += Math.cos(s.dir) * CFG.ship.accel * dt;
-      s.vy += Math.sin(s.dir) * CFG.ship.accel * dt;
-    }
-    const damp = Math.exp(-CFG.ship.drag * dt);
-    s.vx *= damp; s.vy *= damp;
-    const sp = Math.hypot(s.vx, s.vy);
-    if (sp > CFG.ship.maxSpeed) { s.vx *= CFG.ship.maxSpeed / sp; s.vy *= CFG.ship.maxSpeed / sp; }
-    s.x += s.vx * dt; s.y += s.vy * dt;
-
+    stepShip(s, this.input, dt, CFG.ship, WORLD);
     const r = CFG.ship.radius;
-    if (s.x < -WORLD.halfW + r) { s.x = -WORLD.halfW + r; s.vx = Math.abs(s.vx) * 0.3; }
-    if (s.x > WORLD.halfW - r) { s.x = WORLD.halfW - r; s.vx = -Math.abs(s.vx) * 0.3; }
-    if (s.y < -WORLD.halfH + r) { s.y = -WORLD.halfH + r; s.vy = Math.abs(s.vy) * 0.3; }
-    if (s.y > WORLD.halfH - r) { s.y = WORLD.halfH - r; s.vy = -Math.abs(s.vy) * 0.3; }
 
     // les planètes sont solides
     for (const b of this.bodies) {

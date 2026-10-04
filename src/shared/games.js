@@ -24,7 +24,16 @@ export const GAMES = [
     status: 'open',
     planet: { x: 300, y: 140, radius: 62, orbit: 125, hue: 'sea' },
   },
-  { id: 'soon-1', name: 'Planète Syntaxe', status: 'building', planet: { x: 20, y: -420, radius: 48, orbit: 96, hue: 'sand' } },
+  {
+    id: 'inventeurs',
+    name: 'Les Inventeurs',
+    tagline: 'Fais le tour du monde pour rendre leurs inventions aux inventeurs',
+    description: 'Un savant fou a effacé toutes les inventions ! Pilote le vaisseau de Platon, trouve le bon pays sur la carte et découvre qui a inventé quoi, et quand. Objectif : 20 inventions livrées en 5 minutes, sur 3 niveaux de plus en plus difficiles (boussole cassée, carte effacée).',
+    audience: 'Tous âges — géographie et histoire des inventions',
+    url: '/games/inventeurs/',
+    status: 'open',
+    planet: { x: 40, y: -400, radius: 58, orbit: 118, hue: 'globe' },
+  },
   { id: 'soon-2', name: 'Planète Algèbre', status: 'building', planet: { x: -520, y: 260, radius: 44, orbit: 92, hue: 'sand' } },
   { id: 'soon-3', name: 'Planète Langues', status: 'building', planet: { x: 560, y: -330, radius: 52, orbit: 100, hue: 'sand' } },
 ];
@@ -32,4 +41,9 @@ export const GAMES = [
 export const SITE = {
   name: 'Platon Formation',
   url: 'https://www.platonformation.com',
+};
+
+export const AUTHOR = {
+  name: 'Chaffanjon J.',
+  url: 'https://rapatatasse.github.io/portfolio/',
 };

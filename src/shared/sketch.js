@@ -1,4 +1,4 @@
-import { drawCanvas } from '../../shared/canvasTexture.js';
+import { drawCanvas } from './canvasTexture.js';
 
 /**
  * Dessins « à main levée » façon planches de Léonard de Vinci : encre sépia, double trait tremblé,
@@ -21,7 +21,7 @@ export function makeRng(seed = 1) {
   };
 }
 
-const pen = (ctx, width = 1.6, color = INK, alpha = 1) => {
+export const pen = (ctx, width = 1.6, color = INK, alpha = 1) => {
   ctx.strokeStyle = color; ctx.lineWidth = width; ctx.globalAlpha = alpha;
   ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.setLineDash([]);
 };
@@ -82,7 +82,7 @@ function hatch(ctx, clip, box, { angle = -0.7, gap = 5, width = 0.9, alpha = 0.6
   ctx.restore();
 }
 
-function wash(ctx, color, alpha, path) {
+export function wash(ctx, color, alpha, path) {
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.fillStyle = color;
@@ -95,7 +95,7 @@ const SCALE = 2;   // résolution des textures : 2 px par unité monde
 
 // ───────────────────────────── planètes ─────────────────────────────
 
-const WASH = { ink: '#b8453a', sea: '#3f8f8a', sand: '#c9a24f', home: '#c9b27a' };
+const WASH = { ink: '#b8453a', sea: '#3f8f8a', sand: '#c9a24f', home: '#c9b27a', globe: '#6f9a5a' };
 
 export function planetTexture({ radius, hue, seed = 1, building = false, home = false }) {
   const side = Math.ceil((radius * 2 + 24) * SCALE);
@@ -148,6 +148,14 @@ export function planetTexture({ radius, hue, seed = 1, building = false, home = 
       const s = r * 0.2;
       ctx.fillRect(c - s / 2, c - s / 2, s, s);
       pen(ctx, 1.8, INK); ctx.strokeRect(c - s / 2, c - s / 2, s, s);
+    } else if (hue === 'globe') {
+      // méridiens, parallèles et continents esquissés
+      for (const k of [0.35, 0.7]) { ctx.beginPath(); ctx.ellipse(c, c, r * k, r, 0, 0, Math.PI * 2); ctx.stroke(); }
+      for (const k of [-0.5, 0, 0.5]) { const half = Math.sqrt(r * r * (1 - k * k)); line(ctx, c - half, c + k * r, c + half, c + k * r, rng, 1.2); }
+      line(ctx, c, c - r, c, c + r, rng, 1);
+      pen(ctx, 2.2, INK, 0.9);
+      polygon(ctx, [[c - r * 0.55, c - r * 0.3], [c - r * 0.3, c - r * 0.55], [c - r * 0.1, c - r * 0.35], [c - r * 0.2, c], [c - r * 0.45, c + r * 0.05]], rng, { passes: 1 });
+      polygon(ctx, [[c + r * 0.1, c - r * 0.1], [c + r * 0.5, c - r * 0.2], [c + r * 0.55, c + r * 0.2], [c + r * 0.25, c + r * 0.5], [c + r * 0.05, c + r * 0.2]], rng, { passes: 1 });
     } else if (hue === 'sea') {
       // vagues + petit voilier
       for (let k = -2; k <= 2; k++) {

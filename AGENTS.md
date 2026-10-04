@@ -11,3 +11,5 @@
 - Pirates : paramètres de jeu dans `config.js`, un module par responsabilité (bateau, ennemis, bataille, carte, ui).
 - Images/audio dans `public/` (servis à la racine). Notes d'origine et ressources non utilisées dans `docs/`.
 - Test connu en échec depuis le projet d'origine : « objectif sandwich / tir » (PIXEL).
+- Inventeurs : règles dans le bloc `GAME` de `games/inventeurs/main.js`, données dans `inventions.js`, géométrie générée (`node scripts/buildWorld.mjs` depuis `public/images/world.svg`, ne pas éditer `worldGeo.js`). Déplacements via `shared/ShipPhysics.js` (identiques au hub).
+- Style commun parchemin/croquis : `shared/theme.css` + `shared/theme.js` (polices) + filtre SVG `#wobble` à mettre dans chaque page ; dessins canvas dans `shared/sketch.js`.
