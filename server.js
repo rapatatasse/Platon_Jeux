@@ -24,6 +24,14 @@ const SECURITY_HEADERS = {
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   'Content-Security-Policy': "default-src 'self'; img-src 'self' data: blob:; media-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'self'",
 };
+const PIXEL_SECURITY_HEADERS = {
+  ...SECURITY_HEADERS,
+  'Content-Security-Policy': "default-src 'self'; img-src 'self' data: blob:; media-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval'; connect-src 'self'; frame-ancestors 'self'",
+};
+
+function securityHeadersFor(url) {
+  return /^\/games\/pixel(?:\/|$)/.test((url ?? '').split('?')[0]) ? PIXEL_SECURITY_HEADERS : SECURITY_HEADERS;
+}
 
 function resolveFile(urlPath) {
   const clean = normalize(decodeURIComponent(urlPath.split('?')[0])).replace(/^([/\\])+/, '');
@@ -34,11 +42,12 @@ function resolveFile(urlPath) {
 }
 
 createServer((req, res) => {
+  const securityHeaders = securityHeadersFor(req.url);
   if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405).end(); return; }
   let file;
   try { file = resolveFile(req.url); } catch { res.writeHead(400).end(); return; }
   if (!file) {
-    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', ...SECURITY_HEADERS }).end('404 — page introuvable');
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', ...securityHeaders }).end('404 — page introuvable');
     return;
   }
   const ext = extname(file);
@@ -46,7 +55,7 @@ createServer((req, res) => {
   const headers = {
     'Content-Type': TYPES[ext] ?? 'application/octet-stream',
     'Cache-Control': hashed ? 'public, max-age=31536000, immutable' : ext === '.html' ? 'no-cache' : 'public, max-age=3600',
-    ...SECURITY_HEADERS,
+    ...securityHeaders,
   };
   const gzip = COMPRESSIBLE.has(ext) && /\bgzip\b/.test(req.headers['accept-encoding'] ?? '');
   if (gzip) { headers['Content-Encoding'] = 'gzip'; headers.Vary = 'Accept-Encoding'; }
