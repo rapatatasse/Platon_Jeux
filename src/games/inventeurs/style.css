@@ -1,10 +1,16 @@
-html, body { height: 100%; }
-body { overflow: hidden; }
+html, body { min-height: 100%; }
+body { min-height: 100vh; overflow-x: hidden; overflow-y: auto; }
 button.btn { background: none; border: none; cursor: pointer; }
 .btn:focus-visible { outline: 2px dashed var(--rust); outline-offset: 3px; }
 .hint { font-size: 17px; opacity: 0.65; margin: 6px 0 0; }
 
 .stage { position: relative; height: 100vh; height: 100svh; overflow: hidden; }
+.seo-content { max-width: 900px; margin: 0 auto; padding: 36px 24px 56px; color: var(--ink); font-size: 22px; }
+.seo-content h1, .seo-content h2 { line-height: 1.15; }
+.seo-content h1 { font-size: clamp(2rem, 5vw, 3rem); }
+.seo-content h2 { margin-top: 1.5em; }
+.seo-content li { margin-block: 8px; }
+@media (max-width: 600px) { .seo-content { padding: 28px 18px 44px; font-size: 19px; } }
 #map { position: absolute; inset: 0; }
 .loading { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; font-size: 30px; pointer-events: none; }
 .stage.ready .loading { display: none; }

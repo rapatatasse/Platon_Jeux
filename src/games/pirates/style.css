@@ -231,3 +231,10 @@ body { overflow-x: hidden; min-height: 100vh; background: #050f1a; font-family: 
     .battle-question { font-size: 44px; }
     .numeric-keypad { width: 190px; }
 }
+.seo-content { position: relative; z-index: 1; max-width: 900px; min-height: 80vh; margin: 100vh auto 0; padding: 36px 24px 56px; background: #050f1a; color: #e8d5a3; font: 17px/1.65 Georgia, serif; }
+.seo-content h1, .seo-content h2 { color: #4ec9b0; line-height: 1.2; }
+.seo-content h1 { font-size: clamp(1.8rem, 5vw, 2.6rem); }
+.seo-content h2 { margin-top: 1.8em; }
+.seo-content a { color: #ffd700; }
+.seo-content li { margin-block: 8px; }
+@media (max-width: 560px) { .seo-content { padding: 28px 18px 44px; } }

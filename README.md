@@ -82,13 +82,14 @@ SITE_URL=https://votre-domaine.tld npm run build
 npm start
 ```
 
-- `SITE_URL` (adresse publique finale, sans slash final) active `canonical`, `og:url`, `og:image`, `sitemap.xml` et l'URL dans `robots.txt`. Sans lui, ces éléments sont omis.
+- `SITE_URL` (adresse publique finale, sans slash final) permet de remplacer le domaine par défaut `https://jeux.platonformation.com` pour les balises canoniques et sociales, les données structurées, `sitemap.xml`, `robots.txt` et `llms.txt`.
 - Envoyer `dist/`, `server.js` et `package.json` ; démarrer avec `npm start` (Infomaniak fournit `PORT`). Aucune dépendance d'exécution : `node server.js` suffit.
 - `server.js` ajoute cache long sur les fichiers hachés, gzip et en-têtes de sécurité (CSP, nosniff…).
 
 ## Référencement (Google)
 
-- Titre, description, Open Graph, `lang="fr"` et données structurées (`EducationalOrganization`, `WebSite`, `ItemList` de `VideoGame`).
+- Titres et descriptions dédiés, balises canoniques, Open Graph, Twitter Cards, favicon, données structurées `VideoGame`, sitemap et `llms.txt` générés au build.
+- Chaque jeu comprend un contenu HTML indexable et des liens vers les autres jeux ; PIXEL propose aussi une mise en page adaptée aux petits écrans.
 - Le catalogue est du vrai HTML (indexable) généré depuis `games.js`, y compris sans clavier ni WebGL.
 - Liens sortants vers www.platonformation.com (nav, section dédiée, pied de page).
 - À faire côté Platon Formation : lien depuis platonformation.com vers ce site, inscription à Google Search Console (soumettre `sitemap.xml`).

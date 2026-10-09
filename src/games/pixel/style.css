@@ -14,9 +14,10 @@
 }
 
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: var(--mono); font-size: 13px; }
+html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font-family: var(--mono); font-size: 13px; }
+body { min-height: 100vh; }
 
-#app { display: flex; height: 100vh; }
+#app { display: flex; height: 100vh; height: 100svh; }
 #scene { position: relative; flex: 1; min-width: 0; }
 #scene canvas { display: block; width: 100% !important; height: 100% !important; }
 #side { width: 420px; flex: none; display: flex; flex-direction: column; gap: 8px; padding: 8px; background: var(--panel); overflow: hidden; }
@@ -105,3 +106,18 @@ body.resizing #scene { pointer-events: none; }
 .upgrade b { color: var(--yellow); }
 .upgrade span { color: var(--muted); font-size: 12px; }
 .upgrade code { color: var(--cyan); font-size: 11px; }
+
+.seo-content { max-width: 920px; margin: 0 auto; padding: 36px 24px 56px; color: var(--text); font: 16px/1.65 system-ui, sans-serif; }
+.seo-content h1, .seo-content h2 { color: var(--yellow); line-height: 1.2; }
+.seo-content h1 { font-size: clamp(1.8rem, 5vw, 2.6rem); }
+.seo-content h2 { margin-top: 1.8em; font-size: 1.35rem; }
+.seo-content a { color: var(--cyan); }
+.seo-content summary { cursor: pointer; color: var(--cyan); }
+
+@media (max-width: 760px) {
+  #app { height: auto; min-height: 100svh; flex-direction: column; }
+  #scene { flex: 1 1 auto; height: 46svh; min-height: 280px; }
+  #side { width: 100%; height: min(54svh, 460px); min-height: 360px; flex: none; }
+  #splitter { display: none; }
+  .seo-content { padding: 28px 18px 44px; }
+}
