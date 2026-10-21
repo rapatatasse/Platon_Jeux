@@ -12,6 +12,7 @@ const root = resolve(import.meta.dirname, 'src');
 const pages = {
   hub: resolve(root, 'index.html'),
   pixel: resolve(root, 'games/pixel/index.html'),
+  pixelAide: resolve(root, 'games/pixel/aide/index.html'),
   pirates: resolve(root, 'games/pirates/index.html'),
   inventeurs: resolve(root, 'games/inventeurs/index.html'),
 };

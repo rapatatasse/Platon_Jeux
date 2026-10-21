@@ -8,7 +8,7 @@ import { CELL, BULLET_SPEED, BULLET_RANGE } from './constants.js';
  *   playerMoved      { x, z }
  *   blocked          { x, y, z }
  *   yellowAttached   { x, y, z }            (position monde du nouveau cube)
- *   cubeDestroyed    { x, y, z, type, cause } type: 'yellow'|'purple'|'white'  cause: 'purple'|'bullet'|'detached'|'sandwich'
+ *   cubeDestroyed    { x, y, z, type, cause } type: 'yellow'|'purple'|'white'  cause: 'purple'|'bullet'|'detached'|'crush'
  *   cubeMoved        { from, to }           (cube jaune du joueur qui tombe : gravité)
  *   cellMoved        { from, to, type }     (case du monde qui tombe : gravité)
  *   bulletFired      { bullet }
@@ -236,6 +236,7 @@ export function stepProjectiles(game) {
 export function stepEnemies(game) {
   const { level, player, world, events } = game;
   if (!level.purpleMoveEvery || game.tickCount % level.purpleMoveEvery !== 0) return;
+  if (level.purpleMode === 'bounce') return stepBouncers(game);
 
   const purples = [...world.cellsNear(player.x, player.z, level.purpleRange ?? 12, CELL.PURPLE)];
   for (const p of purples) {
@@ -262,6 +263,27 @@ export function stepEnemies(game) {
     if (game.state !== 'playing') return;
   }
   settle(game);
+}
+
+/**
+ * Mode « rebond » : chaque violet avance d'une case sur l'axe X (vers la gauche au départ)
+ * et fait demi-tour dès qu'une case occupée (mur, autre violet, joueur) lui barre la route.
+ */
+function stepBouncers(game) {
+  const { world, player, events } = game;
+  const k = (c) => `${c.x},${c.y},${c.z}`;
+  for (const p of [...world.cellsOfType(CELL.PURPLE)]) {
+    if (world.get(p.x, p.y, p.z) !== CELL.PURPLE) continue;
+    let dx = game.purpleDirs.get(k(p)) ?? -1;
+    game.purpleDirs.delete(k(p));
+    const blocked = (d) => world.has(p.x + d, p.y, p.z) || player.occupies(p.x + d, p.y, p.z);
+    if (blocked(dx)) dx = -dx;
+    if (blocked(dx)) { game.purpleDirs.set(k(p), dx); continue; }
+    world.remove(p.x, p.y, p.z);
+    world.set(p.x + dx, p.y, p.z, CELL.PURPLE);
+    game.purpleDirs.set(`${p.x + dx},${p.y},${p.z}`, dx);
+    events.emit('purpleMoved', { from: { x: p.x, y: p.y, z: p.z }, to: { x: p.x + dx, y: p.y, z: p.z } });
+  }
 }
 
 function purpleAttacks(game, p, tx, ty, tz) {

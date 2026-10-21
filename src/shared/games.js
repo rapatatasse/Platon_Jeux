@@ -50,7 +50,7 @@ export const GAMES = [
 export const SITE = {
   name: 'Platon Formation',
   url: 'https://www.platonformation.com',
-  version: '1.2',
+  version: '1.3',
 };
 
 export const AUTHOR = {

@@ -4,18 +4,20 @@ import { Player } from './Player.js';
 import { parseCommand } from './commands.js';
 import { getLevelDef, buildLevel, goalLabel } from './levels/index.js';
 import * as Rules from './Rules.js';
+import { scan } from './scan.js';
 
 /**
  * État complet d'une partie + boucle de tick.
  * Le monde avance à intervalle fixe (tickMs). Les commandes sont mises en file
- * et consommées UNE par tick : une boucle `for` de 10 `run([1,0])` = 10 pas.
+ * et consommées UNE par tick : une boucle `for` de 10 `move(1, 0)` = 10 pas.
  *
  * États : 'playing' | 'levelcomplete' (animation) | 'won' | 'gameover'
  */
 export class Game {
-  constructor({ level = 1, seed = 1 } = {}) {
+  constructor({ level = 1, seed = 1, test = 0 } = {}) {
     this.events = new Emitter();
     this.seed = seed;
+    this.testIndex = test;
     this.player = new Player();
     this.bullets = START_BULLETS;
     this.projectiles = [];
@@ -33,7 +35,7 @@ export class Game {
   // ------------------------------------------------------------ Niveaux
 
   loadLevel(n) {
-    const def = getLevelDef(n);
+    const def = getLevelDef(n, this.testIndex);
     if (!def) {
       this.state = 'won';
       this.events.emit('won', { score: this.score });
@@ -45,19 +47,22 @@ export class Game {
     this.gates = built.gates;
     this.projectiles = [];
     this.queue = [];
-    this.progress = { collect: 0, sandwich: 0, shoot: 0, gates: 0 };
+    this.purpleDirs = new Map();
+    this.progress = { collect: 0, shoot: 0, gates: 0, purples: 0 };
     this.player.x = built.start.x;
     this.player.z = built.start.z;
+    this.player.setOffsets(def.offsets ?? []);
     for (const c of this.player.cells()) this.world.remove(c.x, c.y, c.z);   // jamais de chevauchement
-    if (def.bullets > this.bullets) this.addBullets(def.bullets - this.bullets);
+    this.addBullets((def.bullets ?? 0) - this.bullets);
     this.player.alive = true;
     this.state = 'playing';
     this.events.emit('levelLoaded', { level: this.level });
   }
 
   /** Saut direct à un niveau (test / debug). Retourne false si le niveau n'existe pas. */
-  jumpToLevel(n) {
-    if (!getLevelDef(n)) return false;
+  jumpToLevel(n, test = 0) {
+    if (!getLevelDef(n, test)) return false;
+    this.testIndex = test;
     this.loadLevel(n);          // remet aussi state = 'playing' (même après une défaite)
     this.events.emit('levelUp', { from: this.level.n, to: n, jump: true });
     return true;
@@ -68,7 +73,7 @@ export class Game {
     this.events.on('yellowAttached', () => { this.progress.collect++; });
     this.events.on('cubeDestroyed', (d) => {
       if (d.type !== CELL.PURPLE) return;
-      if (d.cause === 'sandwich') this.progress.sandwich++;
+      this.progress.purples++;
       if (d.cause === 'bullet') this.progress.shoot++;
     });
     this.events.on('playerMoved', ({ x, z }) => {
@@ -82,7 +87,16 @@ export class Game {
   }
 
   get goalProgress() {
-    return this.progress[this.level.goal.type] ?? 0;
+    const { goal } = this.level;
+    if (goal.type === 'shape') return this.matchesShape(goal.pattern) ? 1 : 0;
+    return this.progress[goal.type] ?? 0;
+  }
+
+  /** La formation des cubes jaunes (offsets) est-elle exactement celle demandée ? */
+  matchesShape(pattern) {
+    const k = (o) => `${o.x},${o.y},${o.z}`;
+    const want = new Set(pattern.map(k));
+    return this.player.size === want.size && this.player.offsets.every((o) => want.has(k(o)));
   }
 
   checkLevelComplete() {
@@ -97,7 +111,7 @@ export class Game {
   // ------------------------------------------------------------ Commandes
 
   /** Valide et met en file une commande brute [x, z, fire, moveyellow]. */
-  enqueue(raw) {
+  enqueue(raw, { onDone = null } = {}) {
     const r = parseCommand(raw);
     if (!r.ok) {
       this.events.emit('error', r.error);
@@ -107,7 +121,7 @@ export class Game {
       this.events.emit('error', `File pleine (${MAX_QUEUE} commandes). Ta boucle tourne peut-être trop longtemps.`);
       return false;
     }
-    this.queue.push(r.cmd);
+    this.queue.push(onDone ? { ...r.cmd, onDone } : r.cmd);
     this.events.emit('queueChanged', { length: this.queue.length });
     return true;
   }
@@ -126,6 +140,7 @@ export class Game {
     if (this.state !== 'playing') return;
     if (cmd.fire) Rules.fire(this, cmd.fire);
     if (cmd.moves.length) Rules.applyMoveYellow(this, cmd.moves);
+    cmd.onDone?.(true);
   }
 
   // ------------------------------------------------------------ Boucle
@@ -163,6 +178,10 @@ export class Game {
   }
 
   /** Copie des offsets (pour le terminal : la variable CubesOffsets). */
+  get scanner() {
+    return scan(this);
+  }
+
   get cubesOffsets() {
     return this.player.offsets.map((o) => ({ ...o }));
   }

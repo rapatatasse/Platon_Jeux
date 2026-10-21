@@ -8,6 +8,7 @@ import { Terminal } from './ui/Terminal.js';
 import { FunctionEditor } from './ui/FunctionEditor.js';
 import { Hud } from './ui/Hud.js';
 import { Overlay } from './ui/Overlay.js';
+import { LevelsModal } from './ui/LevelsModal.js';
 import { initSplitter } from './ui/Splitter.js';
 
 /**
@@ -25,7 +26,9 @@ function boot() {
   const api = createTerminalApi(game, log);
 
   terminal = new Terminal(document.getElementById('terminal'), api);
-  new FunctionEditor(document.getElementById('functions'), api, log);
+  const editor = new FunctionEditor(document.getElementById('functions'), api, log);
+  const levelsModal = new LevelsModal(document.getElementById('levels-modal'), { game, editor });
+  document.getElementById('levels').onclick = () => levelsModal.open();
   const hud = new Hud(document.getElementById('hud'), game);
   new Overlay(document.getElementById('overlay'), game, { onRestart: () => location.reload() });
 
@@ -39,7 +42,7 @@ function boot() {
   game.events.on('error', (m) => log('error', m));
   game.events.on('yellowAttached', () => log('event', `+1 cube jaune (${game.player.size} au total)`));
   game.events.on('cubeDestroyed', (d) => {
-    const why = { purple: 'percuté par un violet', bullet: 'touché par une balle', detached: 'détaché du groupe', sandwich: 'pris en sandwich' }[d.cause] ?? d.cause;
+    const why = { purple: 'percuté par un violet', bullet: 'touché par une balle', detached: 'détaché du groupe' }[d.cause] ?? d.cause;
     log('event', `Pixel ${d.type} détruit en (${d.x}, ${d.y}, ${d.z}) : ${why}${d.type === 'purple' ? ' → +1 balle' : ''}`);
   });
   game.events.on('cubeMoved', ({ to }) => log('event', `Un cube jaune tombe en (${to.x}, ${to.y}, ${to.z}) (gravité).`));

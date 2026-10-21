@@ -1,3 +1,5 @@
+import { scanRange } from '../core/scan.js';
+
 /**
  * Ce que le joueur peut utiliser dans le terminal et dans ses fonctions.
  * Les variables BulletsCount / CubesOffsets sont des "getters" : toujours à jour.
@@ -8,12 +10,16 @@ export function createTerminalApi(game, log) {
   const userFns = {};
 
   // Si la file est pleine, on LÈVE une erreur : cela casse la boucle du joueur
-  // (sinon un `while (true) run(...)` gèlerait le navigateur).
+  // (sinon un `while (true) move(...)` gèlerait le navigateur).
   const enqueue = (cmd) => {
     if (game.isQueueFull()) {
       throw new Error(`file pleine (${game.queue.length} commandes). Ta boucle ne s'arrête pas ? Le bouton STOP vide la file.`);
     }
-    return game.enqueue(cmd);
+    // La commande renvoie une promesse résolue quand elle est EXÉCUTÉE (1 par tick) :
+    // `await move(...)` permet de relire Position, Scanner... après le mouvement.
+    return new Promise((resolve) => {
+      if (!game.enqueue(cmd, { onDone: resolve })) resolve(false);
+    });
   };
 
   const api = {
@@ -25,13 +31,18 @@ export function createTerminalApi(game, log) {
     get Gates() { return game.gates.map((g) => ({ x: g.x - game.player.x, z: g.z - game.player.z, passed: g.passed })); },
     get Position() { return game.player.position; },
     get State() { return game.snapshot(); },
+    get Scanner() { return game.scanner; },
+    get ScannerRange() { return scanRange(game.player); },
 
-    // ---- actions (mises en file, exécutées 1 par tick)
-    run(cmd) { return enqueue(cmd); },
+    // ---- actions (mises en file, exécutées 1 par tick) : le déplacement se fait uniquement avec move(x, z)
     move(x, z) { return enqueue([x, z]); },
     fire(x, y, z) { return enqueue([0, 0, [x, y, z]]); },
     moveYellow(...pairs) { return enqueue([0, 0, null, pairs]); },
-    wait(n = 1) { for (let i = 0; i < n; i++) enqueue([0, 0]); return true; },
+    wait(n = 1) {
+      let last;
+      for (let i = 0; i < n; i++) last = enqueue([0, 0]);
+      return last;
+    },
     stop() {
       const n = game.queue.length;
       game.clearQueue();
@@ -41,9 +52,9 @@ export function createTerminalApi(game, log) {
 
     // ---- affichage : console.log(...) écrit dans le terminal (et dans la vraie console du navigateur)
     console: {
-      log: (...args) => { log('result', args.map(format).join(' ')); window.console.log(...args); },
-      error: (...args) => { log('error', args.map(format).join(' ')); window.console.error(...args); },
-      warn: (...args) => { log('error', args.map(format).join(' ')); window.console.warn(...args); },
+      log: (...args) => { log('result', args.map(format).join(' ')); globalThis.console.log(...args); },
+      error: (...args) => { log('error', args.map(format).join(' ')); globalThis.console.error(...args); },
+      warn: (...args) => { log('error', args.map(format).join(' ')); globalThis.console.warn(...args); },
     },
     print(...args) { api.console.log(...args); return undefined; },
 
@@ -104,14 +115,17 @@ export function compileUserFunction(api, code) {
 function help(log) {
   [
     'AXES       ->  X = gauche(-1)/droite(+1)   Y = HAUTEUR (0 = sol)   Z = haut(-1)/bas(+1) de l\'écran',
-    'COMMANDES  ->  run([x, z, fire, moveyellow])   (1 commande = 1 pas du monde)',
-    '  x, z        : -1, 0 ou 1. Déplacement sur le plateau (pas de Y : on ne monte pas).',
-    '  fire        : [x, y, z] direction du tir (ou null). Ex : run([0, 0, [1, 0, 0]]) tire à droite',
-    '  moveyellow  : [id, [x, y, z], ...] nouvel offset des cubes jaunes (ou null).',
-    '                Ex : run([0, 0, null, [0, [0, 1, 0]]])  place le cube 0 au-dessus du rouge',
-    'RACCOURCIS ->  move(x, z)  fire(x, y, z)  moveYellow(id, [x,y,z], ...)  wait(n)',
+    'COMMANDES  ->  (1 commande = 1 pas du monde, toujours avec des parenthèses)',
+    '  move(x, z)                    : -1, 0 ou 1. Déplacement sur le plateau (pas de Y : on ne monte pas). Ex : move(1, 0)',
+    '  fire(x, y, z)                 : tire dans la direction [x, y, z]. Ex : fire(1, 0, 0) tire à droite',
+    '  moveYellow(id, [x, y, z], ...) : nouvel offset des cubes jaunes. Ex : moveYellow(0, [0, 1, 0]) place le cube 0 au-dessus du rouge',
+    '  wait(n)                       : ne rien faire pendant n pas',
     'STOP       ->  stop() ou le bouton STOP : annule toutes les commandes en attente (boucle trop longue...).',
     'VARIABLES  ->  BulletsCount   CubesOffsets   Level   Goal   Gates (portes, relatives à toi)   Position   State',
+    '               Scanner (violets/jaunes proches, relatifs à toi)   ScannerRange (portée : 1 + jaunes empilés sur le rouge)',
+    '               Scanner -> [{ type: "violet", coordinates: [[dx, dz], ...] }, { type: "jaune", coordinates: [...] }]',
+    'ATTENDRE    ->  dans une fonction async : await move(1, 0) attend que le pas soit fait, puis relis Position / Scanner.',
+    'AIDE+       ->  le bouton "Aide" ouvre la page complète (commandes, scanner, bases de JavaScript).',
     'AFFICHER   ->  tape juste le nom :  CubesOffsets          -> affiche sa valeur',
     '               console.log(CubesOffsets)                  -> pareil, marche aussi dans tes fonctions',
     '               console.log("balles :", BulletsCount)      -> plusieurs valeurs',
@@ -120,10 +134,10 @@ function help(log) {
     '               for (const c of CubesOffsets) console.log(c.x, c.y, c.z)   -> un par ligne',
     'AUTRES     ->  help()  test()  clear()  functions()',
     'RÈGLES     ->  jaune touché = ajouté au-dessus | violet touché par le rouge = perdu',
-    '               violet entre 2 cubes (gauche/droite ou devant/derrière) = détruit, +1 balle',
+    '               violet = détruit par une balle, ou écrasé par un cube jaune qui lui tombe dessus (+1 balle)',
     '               cube jaune non relié au rouge = détruit | un cube ne flotte jamais : il retombe',
     '               blanc = mur incassable (même à la balle) | objectif atteint = niveau suivant',
-    'SYNTAXE    ->  les valeurs se séparent par des VIRGULES : run([1, 0])  et non run(1;0)',
+    'SYNTAXE    ->  les valeurs se séparent par des VIRGULES : move(1, 0)  et non move(1;0)',
     'ASTUCE     ->  Écris des fonctions dans le panneau "Mes fonctions", puis appelle-les ici.',
   ].forEach((l) => log('help', l));
 }
@@ -141,17 +155,17 @@ function runTest(game, api, log) {
   log('info', `Exemple d'offsets : ${JSON.stringify(exampleOffsets)}`);
   log('info', '{ x: 0, y: -1, z: 0 } serait INTERDIT : y < 0 = sous le sol.');
   log('info', `BulletsCount = ${api.BulletsCount}   CubesOffsets = ${JSON.stringify(api.CubesOffsets)}`);
-  log('info', 'Boucle : for (let i = 0; i < 3; i++) run([1, 0])   -> 3 pas à droite');
-  for (let i = 0; i < 3; i++) api.run([1, 0]);
-  log('info', 'Puis run([0, 1]) x2 (vers le bas), run([-1, 0]) x3, run([0, -1]) x2 (vers le haut) : un rectangle.');
-  for (let i = 0; i < 2; i++) api.run([0, 1]);
-  for (let i = 0; i < 3; i++) api.run([-1, 0]);
-  for (let i = 0; i < 2; i++) api.run([0, -1]);
-  log('info', 'Tir vers la droite : run([0, 0, [1, 0, 0]])');
-  api.run([0, 0, [1, 0, 0]]);
-  log('info', 'Erreur volontaire : run([2, 0])');
-  api.run([2, 0]);
-  log('info', 'Erreur volontaire (y < 0) : run([0, 0, null, [0, [0, -1, 0]]])');
-  api.run([0, 0, null, [0, [0, -1, 0]]]);
+  log('info', 'Boucle : for (let i = 0; i < 3; i++) move(1, 0)   -> 3 pas à droite');
+  for (let i = 0; i < 3; i++) api.move(1, 0);
+  log('info', 'Puis move(0, 1) x2 (vers le bas), move(-1, 0) x3, move(0, -1) x2 (vers le haut) : un rectangle.');
+  for (let i = 0; i < 2; i++) api.move(0, 1);
+  for (let i = 0; i < 3; i++) api.move(-1, 0);
+  for (let i = 0; i < 2; i++) api.move(0, -1);
+  log('info', 'Tir vers la droite : fire(1, 0, 0)');
+  api.fire(1, 0, 0);
+  log('info', 'Erreur volontaire : move(2, 0)');
+  api.move(2, 0);
+  log('info', 'Erreur volontaire (y < 0) : moveYellow(0, [0, -1, 0])');
+  api.moveYellow(0, [0, -1, 0]);
   log('info', `--- fin de test() : ${game.queue.length} commandes en file ---`);
 }

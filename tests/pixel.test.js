@@ -54,7 +54,7 @@ test('un mur blanc bloque le déplacement', () => {
   assert.equal(g.player.x, 0);
 });
 
-test('violet pris en sandwich -> détruit, +1 balle, la colonne descend', () => {
+test('un cube jaune qui tombe sur un violet l\'écrase : détruit, +1 balle, la colonne descend', () => {
   const g = emptyGame();
   g.player.setOffsets([{ x: 1, y: 0, z: 0 }, { x: 2, y: 0, z: 0 }, { x: 3, y: 0, z: 0 }, { x: 2, y: 1, z: 0 }]);
   g.world.set(2, 0, 1, CELL.PURPLE);
@@ -93,7 +93,7 @@ test('tir : détruit le premier pixel rencontré, refusé sans balle', () => {
   assert.match(err, /BulletsCount = 0/);
 });
 
-test('objectif atteint -> animation puis niveau suivant, le joueur garde ses cubes', () => {
+test('objectif atteint -> animation puis niveau suivant, le joueur repart avec les cubes du niveau', () => {
   const g = emptyGame({ type: 'collect', count: 1 });
   g.world.set(1, 0, 0, CELL.YELLOW);
   g.enqueue([1, 0]);
@@ -102,7 +102,7 @@ test('objectif atteint -> animation puis niveau suivant, le joueur garde ses cub
   for (let i = 0; i < 10 && g.state === 'levelcomplete'; i++) g.tick();
   assert.equal(g.level.n, 2);
   assert.equal(g.state, 'playing');
-  assert.equal(g.player.size, 1, 'le joueur garde ses cubes');
+  assert.equal(g.player.size, 0, 'les cubes sont réinitialisés par le niveau (offsets de départ)');
   assert.equal(g.progress.collect, 0, 'la progression repart de zéro');
 });
 
@@ -116,14 +116,24 @@ test('objectif portes : le rouge doit traverser la case porte', () => {
   assert.equal(g.state, 'levelcomplete');
 });
 
-test('objectif sandwich / tir : seuls les violets détruits de la bonne façon comptent', () => {
+test('pas de sandwich : un violet entre deux cubes jaunes n\'est pas détruit', () => {
+  const g = emptyGame({ type: 'purples', count: 1 });
+  g.player.setOffsets([{ x: 0, y: 0, z: 1 }, { x: 1, y: 0, z: 0 }, { x: 2, y: 0, z: 0 }, { x: 2, y: 0, z: 1 }]);
+  g.world.set(1, 0, 1, CELL.PURPLE);
+  g.enqueue([0, 0]); g.tick();
+  assert.equal(g.player.size, 4, 'les quatre cubes sont intacts');
+  assert.equal(g.world.get(1, 0, 1), CELL.PURPLE);
+  assert.equal(g.progress.purples, 0);
+});
+
+test('objectif tir : seul un violet touché par une balle compte', () => {
   const g = emptyGame({ type: 'shoot', count: 1 });
-  g.player.setOffsets([{ x: 1, y: 0, z: 0 }, { x: 3, y: 0, z: 0 }]);
-  g.world.set(2, 0, 1, CELL.PURPLE);
-  g.enqueue([0, 1]); g.tick();          // le violet se retrouve entre les cubes 1 et 3 -> sandwich
-  assert.equal(g.progress.sandwich, 1);
-  assert.equal(g.progress.shoot, 0);
-  assert.equal(g.state, 'playing');
+  g.world.set(4, 0, 0, CELL.PURPLE);
+  g.bullets = 1;
+  g.enqueue([0, 0, [1, 0, 0]]);
+  g.tick(); g.tick();
+  assert.equal(g.progress.shoot, 1);
+  assert.equal(g.state, 'levelcomplete');
 });
 
 test('tous les niveaux se construisent : bordure blanche, départ libre, portes présentes', () => {
@@ -151,11 +161,11 @@ test('les murs blancs sont incassables : la balle disparaît sans détruire le m
   assert.equal(g.bullets, 0, 'balle perdue');
 });
 
-test('boucle infinie : run() lève une erreur quand la file est pleine, stop() la vide', async () => {
+test('boucle infinie : move() lève une erreur quand la file est pleine, stop() la vide', async () => {
   const { createTerminalApi } = await import('../src/games/pixel/api/terminalApi.js');
   const g = emptyGame();
   const api = createTerminalApi(g, () => {});
-  assert.throws(() => { while (true) api.run([1, 0]); }, /file pleine/);
+  assert.throws(() => { while (true) api.move(1, 0); }, /file pleine/);
   assert.ok(g.queue.length > 0);
   api.stop();
   assert.equal(g.queue.length, 0);

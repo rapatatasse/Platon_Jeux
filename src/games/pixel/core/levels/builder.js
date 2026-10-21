@@ -7,7 +7,8 @@ import { mulberry32, hashSeed } from './rng.js';
  *
  * Carte ASCII :
  *   #  mur blanc        J  cube jaune        V  cube violet
- *   T  tour violette (2 de haut)             P  porte (case à traverser avec le rouge)
+ *   T  tour violette (2 de haut)             2-9  tour violette de N cubes de haut
+ *   P  porte (case à traverser avec le rouge)
  *   R  départ du joueur (sinon : centre de la carte)   .  vide
  *
  * `random` place en plus des cubes au hasard (graine déterministe) sur les cases vides,
@@ -42,6 +43,9 @@ export function buildLevel(def, seed = 1) {
         case 'T': world.set(wx, 0, wz, CELL.PURPLE); world.set(wx, 1, wz, CELL.PURPLE); break;
         case 'P': gates.push({ x: wx, z: wz, passed: false }); break;
         case 'R': break;
+        case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+          for (let y = 0; y < Number(ch); y++) world.set(wx, y, wz, CELL.PURPLE);
+          break;
         default: free.push({ x: wx, z: wz });
       }
     }
@@ -95,6 +99,32 @@ export function emptyMap(w, h) {
 export function draw(rows, x, z, ch) {
   if (z < 0 || z >= rows.length || x < 0 || x >= rows[z].length) return;
   rows[z] = rows[z].slice(0, x) + ch + rows[z].slice(x + 1);
+}
+
+/** Carte pleine de murs (à creuser avec carve) de largeur w et hauteur h. */
+export function solidMap(w, h) {
+  return Array.from({ length: h }, () => '#'.repeat(w));
+}
+
+/** Creuse le rectangle [x0..x1] x [z0..z1] (bornes incluses). */
+export function carve(rows, x0, z0, x1, z1, ch = '.') {
+  for (let z = z0; z <= z1; z++) for (let x = x0; x <= x1; x++) draw(rows, x, z, ch);
+}
+
+/** Échange les axes X et Z de la carte (le niveau « tourne »). */
+export function transpose(rows) {
+  const w = Math.max(...rows.map((r) => r.length));
+  return Array.from({ length: w }, (_, x) => rows.map((r) => r[x] ?? '.').join(''));
+}
+
+/** Miroir gauche/droite. */
+export function mirrorX(rows) {
+  return rows.map((r) => [...r].reverse().join(''));
+}
+
+/** Miroir haut/bas. */
+export function mirrorZ(rows) {
+  return [...rows].reverse();
 }
 
 /** Ligne verticale de murs avec une porte au milieu (ou à `gateZ`). */

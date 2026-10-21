@@ -1,16 +1,29 @@
-import { emptyMap } from './builder.js';
+import { solidMap, carve, draw, transpose } from './builder.js';
 
-/**
- * Niveau 3 : le tir. run([0, 0, [x, y, z]]) tire une balle qui détruit le premier
- * pixel rencontré. Chaque violet détruit rend une balle.
- */
+/** Labyrinthe en serpent : un seul couloir d'une case, la porte est au bout. */
+const snake = (gx, gz, turn = false) => {
+  const m = solidMap(13, 11);
+  for (const z of [1, 3, 5, 7, 9]) carve(m, 1, z, 11, z);
+  carve(m, 11, 2, 11, 2);
+  carve(m, 1, 4, 1, 4);
+  carve(m, 11, 6, 11, 6);
+  carve(m, 1, 8, 1, 8);
+  draw(m, 1, 1, 'R');
+  draw(m, gx, gz, 'P');
+  return turn ? transpose(m) : m;
+};
+
 export default {
   id: 3,
-  name: 'Tir',
-  intro: 'Tire avec run([0, 0, [1, 0, 0]]) et détruis 5 violets à la balle. Tu commences avec 5 balles.',
-  goal: { type: 'shoot', count: 5 },
-  bullets: 5,
+  name: 'Le serpent',
+  intro: 'Un seul couloir en serpent. Si ton pixel n\'avance plus, change de direction : écris une fonction async avec await move(...) et compare Position avant/après.',
+  goal: { type: 'gates', count: 1 },
+  bullets: 0,
   purpleMoveEvery: 0,
-  map: emptyMap(25, 25),
-  random: { yellow: 8, purple: 14, minFromStart: 5, spacing: 3 },
+  map: snake(11, 9),
+  tests: [
+    { name: 'Porte ailleurs', map: snake(1, 7) },
+    { name: 'Labyrinthe dans l\'autre sens', map: snake(11, 9, true) },
+    { name: 'Nombre de pas minimal', map: snake(11, 9), budget: 1.6 },
+  ],
 };

@@ -41,6 +41,29 @@ body.resizing #scene { pointer-events: none; }
 .btn-small.stop { background: #8a1e2b; border-color: #c43a4a; color: #fff; font-weight: 700; }
 .btn-small.stop:hover { background: #b52a3c; }
 .mute { position: absolute; top: 10px; right: 10px; opacity: .8; }
+.mute.levels-btn { right: 130px; }
+
+/* Repère des axes (caméra fixe : X vers la droite, Z vers le bas de l'écran, Y vers le haut) */
+#axes { position: absolute; left: 10px; bottom: 10px; z-index: 5; pointer-events: none; background: rgba(15, 17, 32, .55); border: 1px solid var(--border); border-radius: 8px; font-family: var(--mono); font-size: 13px; font-weight: 700; }
+#axes .ax-sub { font-size: 9px; font-weight: 400; fill: var(--muted); }
+
+/* Modale des niveaux */
+.levels-modal { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(8, 9, 20, .75); backdrop-filter: blur(3px); z-index: 20; }
+.levels-modal.hidden { display: none; }
+.modal.levels { width: min(720px, 94%); max-height: 90%; overflow-y: auto; text-align: left; padding: 16px 20px; }
+.lv-title { display: flex; justify-content: space-between; align-items: center; }
+.lv-title h2 { margin: 0; }
+.lv-help { color: var(--muted); margin: 6px 0 10px; }
+.lv-fn select { font-family: inherit; background: #0c0e1a; color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 3px 6px; margin-left: 6px; }
+.lv-row { border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; margin-top: 8px; background: #12152a; }
+.lv-row.complete { border-color: var(--green); }
+.lv-head { display: flex; gap: 8px; align-items: baseline; }
+.lv-count { margin-left: auto; color: var(--yellow); }
+.lv-chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+.chip { font-size: 11px; padding: 1px 8px; border-radius: 10px; border: 1px solid var(--border); color: var(--muted); }
+.chip.ok { border-color: var(--green); color: var(--green); }
+.chip.ko { border-color: #c43a4a; color: #ff7b8a; }
+.lv-actions { display: flex; gap: 6px; }
 
 /* HUD */
 .hud-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }

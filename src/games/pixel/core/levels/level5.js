@@ -1,22 +1,23 @@
-import { emptyMap, wallWithGate, draw } from './builder.js';
+import { emptyMap, draw, carve } from './builder.js';
 
-/** Niveau 5 : deux portes décalées, quelques violets qui gardent le passage. */
-const map = emptyMap(41, 21);
-wallWithGate(map, 13, 5);
-wallWithGate(map, 27, 15);
-draw(map, 5, 10, 'R');
-draw(map, 16, 5, 'V');        // gardien derrière la première porte, décalé
-draw(map, 24, 15, 'V');
-draw(map, 20, 10, 'J');
-draw(map, 34, 10, 'J');
+/** Une ligne de violets barre toute la salle (x = 8). Une seule balle : il faut ouvrir une brèche. */
+const room = (rx, rz, gx, gz) => {
+  const m = emptyMap(17, 9);
+  carve(m, 8, 1, 8, 7, 'V');
+  draw(m, rx, rz, 'R');
+  draw(m, gx, gz, 'P');
+  return m;
+};
 
 export default {
   id: 5,
-  name: 'Deux portes',
-  intro: 'Deux portes à traverser. Écris une fonction pour te faufiler : par exemple avancer(n) et empiler().',
-  goal: { type: 'gates', count: 2 },
-  bullets: 2,
+  name: 'Le barrage',
+  intro: 'Une ligne de violets te barre la route et le rouge ne doit jamais en toucher un. Tu as 1 balle : ouvre une brèche avec fire(x, y, z) puis rejoins la porte.',
+  goal: { type: 'gates', count: 1 },
+  bullets: 1,
   purpleMoveEvery: 0,
-  map,
-  random: { yellow: 8, purple: 4, minFromStart: 3, spacing: 3 },
+  map: room(2, 4, 14, 4),
+  tests: [
+    { name: 'Rouge en bas à gauche, porte en haut à droite', map: room(2, 7, 14, 1) },
+  ],
 };

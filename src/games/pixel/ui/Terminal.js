@@ -15,17 +15,17 @@ export class Terminal {
     root.innerHTML = `
       <div class="panel-title">Terminal
         <button class="btn-small stop" data-action="stop" title="Vide la file : arrête les commandes en attente">■ STOP</button>
-        <button class="btn-small" data-action="help">help()</button>
+        <button class="btn-small" data-action="help" title="Ouvre la page d'aide (commandes, scanner, bases de JavaScript)">Aide</button>
         <button class="btn-small" data-action="clear">clear()</button>
       </div>
       <div class="term-log"></div>
-      <div class="term-input-row"><span class="prompt">&gt;</span><input class="term-input" spellcheck="false" placeholder="run([1, 0])   ou   for (let i = 0; i < 5; i++) run([0, 1])" /></div>
+      <div class="term-input-row"><span class="prompt">&gt;</span><input class="term-input" spellcheck="false" placeholder="move(1, 0)   ou   for (let i = 0; i < 5; i++) move(0, 1)" /></div>
     `;
     this.logEl = root.querySelector('.term-log');
     this.input = root.querySelector('.term-input');
 
     root.querySelector('[data-action="stop"]').onclick = () => this.exec('stop()');
-    root.querySelector('[data-action="help"]').onclick = () => this.exec('help()');
+    root.querySelector('[data-action="help"]').onclick = () => window.open('/games/pixel/aide/', '_blank', 'noopener');
     root.querySelector('[data-action="clear"]').onclick = () => this.exec('clear()');
 
     this.input.addEventListener('keydown', (e) => {
@@ -56,15 +56,14 @@ export class Terminal {
     this.log('cmd', `> ${code}`);
     try {
       const result = evaluate(this.api, code);
-      // Un tableau tapé littéralement ("[1, 0]") est une commande ; une variable (CubesOffsets) s'affiche.
-      if (Array.isArray(result) && code.trim().startsWith('[')) this.api.run(result);
+      if (result instanceof Promise) result.catch((err) => this.log('error', `Erreur JS : ${err.message}`));
       else if (result !== undefined) this.log('result', format(result));
     } catch (err) {
       this.log('error', `Erreur JS : ${err.message}`);
       if (err instanceof SyntaxError) {
         this.log('help', /;/.test(code)
-          ? 'Astuce : sépare les valeurs par des virgules, pas des points-virgules. Exemple : run([1, 0])'
-          : 'Astuce : une commande s\'écrit run([x, z]) avec des crochets. Exemple : run([1, 0]). Tape help() pour la liste.');
+          ? 'Astuce : sépare les valeurs par des virgules, pas des points-virgules. Exemple : move(1, 0)'
+          : 'Astuce : une commande s\'écrit avec des parenthèses. Exemple : move(1, 0). Tape help() pour la liste.');
       }
     }
   }

@@ -87,6 +87,11 @@ export class World {
     }
   }
 
+  /** Toutes les cases d'un type, sur tout le plateau. */
+  *cellsOfType(type) {
+    for (const c of this.chunks.values()) for (const cell of c.values()) if (cell.type === type) yield cell;
+  }
+
   /** Vide un carré autour d'une position (zone de sécurité au début d'un niveau). */
   clearArea(x, z, radius) {
     for (const cell of [...this.cellsNear(x, z, radius)]) this.remove(cell.x, cell.y, cell.z);

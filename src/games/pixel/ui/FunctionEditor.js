@@ -7,10 +7,10 @@ const DEFAULT_FUNCTIONS = [
     name: 'carre',
     code: `function carre(taille) {
   // Dessine un carré : 4 côtés, "taille" pas chacun
-  for (let i = 0; i < taille; i++) run([1, 0]);
-  for (let i = 0; i < taille; i++) run([0, 1]);
-  for (let i = 0; i < taille; i++) run([-1, 0]);
-  for (let i = 0; i < taille; i++) run([0, -1]);
+  for (let i = 0; i < taille; i++) move(1, 0);
+  for (let i = 0; i < taille; i++) move(0, 1);
+  for (let i = 0; i < taille; i++) move(-1, 0);
+  for (let i = 0; i < taille; i++) move(0, -1);
 }`,
   },
   {
@@ -39,7 +39,7 @@ export class FunctionEditor {
     root.innerHTML = `
       <div class="panel-title">Mes fonctions <button class="btn-small" data-action="new">+ nouvelle</button></div>
       <div class="fn-list"></div>
-      <textarea class="fn-code" spellcheck="false" rows="8" placeholder="function avance(n) {\n  for (let i = 0; i < n; i++) run([1, 0]);\n}"></textarea>
+      <textarea class="fn-code" spellcheck="false" rows="8" placeholder="function avance(n) {\n  for (let i = 0; i < n; i++) move(1, 0);\n}"></textarea>
       <div class="fn-actions">
         <button class="btn" data-action="save">Enregistrer</button>
         <span class="fn-hint">Puis dans le terminal : <code>avance(3)</code></span>
@@ -115,7 +115,8 @@ export class FunctionEditor {
     this.log('cmd', `> ${f.name}(${argsText})`);
     try {
       const r = this.api.userFns[f.name](...args);
-      if (r !== undefined) this.log('result', JSON.stringify(r));
+      if (r instanceof Promise) r.catch((err) => this.log('error', `Erreur dans ${f.name} : ${err.message}`));
+      else if (r !== undefined) this.log('result', JSON.stringify(r));
     } catch (err) {
       this.log('error', `Erreur dans ${f.name} : ${err.message}`);
     }
