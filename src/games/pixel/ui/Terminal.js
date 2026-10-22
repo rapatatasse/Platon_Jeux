@@ -17,6 +17,7 @@ export class Terminal {
         <button class="btn-small stop" data-action="stop" title="Vide la file : arrête les commandes en attente">■ STOP</button>
         <button class="btn-small" data-action="help" title="Ouvre la page d'aide (commandes, scanner, bases de JavaScript)">Aide</button>
         <button class="btn-small" data-action="clear">clear()</button>
+        <button class="btn-small" data-action="reset" title="Recommence le niveau sans recharger la page">reset()</button>
       </div>
       <div class="term-log"></div>
       <div class="term-input-row"><span class="prompt">&gt;</span><input class="term-input" spellcheck="false" placeholder="move(1, 0)   ou   for (let i = 0; i < 5; i++) move(0, 1)" /></div>
@@ -27,6 +28,8 @@ export class Terminal {
     root.querySelector('[data-action="stop"]').onclick = () => this.exec('stop()');
     root.querySelector('[data-action="help"]').onclick = () => window.open('/games/pixel/aide/', '_blank', 'noopener');
     root.querySelector('[data-action="clear"]').onclick = () => this.exec('clear()');
+
+    root.querySelector('[data-action="reset"]').onclick = () => this.exec('reset()');
 
     this.input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {

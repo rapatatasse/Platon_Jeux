@@ -59,6 +59,11 @@ export class Game {
     this.events.emit('levelLoaded', { level: this.level });
   }
 
+  /** Recommence le niveau courant (même après une défaite). */
+  resetLevel() {
+    this.loadLevel(this.level.n);
+  }
+
   /** Saut direct à un niveau (test / debug). Retourne false si le niveau n'existe pas. */
   jumpToLevel(n, test = 0) {
     if (!getLevelDef(n, test)) return false;

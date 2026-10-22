@@ -171,6 +171,17 @@ test('boucle infinie : move() lève une erreur quand la file est pleine, stop() 
   assert.equal(g.queue.length, 0);
 });
 
+test('boucle sans commande : le garde-fou stoppe le script après 1000 tours', async () => {
+  const { createTerminalApi, evaluate, compileUserFunction } = await import('../src/games/pixel/api/terminalApi.js');
+  const api = createTerminalApi(emptyGame(), () => {});
+  assert.throws(() => evaluate(api, 'while (true) {}'), /fatigué/);
+  assert.throws(() => evaluate(api, 'for (;;) {}'), /fatigué/);
+  assert.throws(() => evaluate(api, 'let i = 0; do { i++ } while (true)'), /fatigué/);
+  compileUserFunction(api, 'function boucle() { while (true) {} }');
+  assert.throws(() => api.boucle(), /fatigué/);
+  assert.equal(evaluate(api, 'let n = 0; for (let i = 0; i < 100; i++) n += i; n'), 4950);
+});
+
 test('gravité : un cube placé en hauteur sans support retombe', () => {
   const g = emptyGame();
   g.player.setOffsets([{ x: 1, y: 0, z: 0 }]);

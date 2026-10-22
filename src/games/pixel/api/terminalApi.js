@@ -6,14 +6,61 @@ import { scanRange } from '../core/scan.js';
  *
  * `log(kind, text)` est fourni par l'UI pour afficher les messages.
  */
+export const MAX_LOOP_STEPS = 1000;
+export const TIRED_MESSAGE = "Trop d'instructions : ton pixel est fatigué, il est rentré dans une boucle sans fin.";
+
+/**
+ * Ajoute un garde-fou dans chaque `while (...)` / `for (;;)` : la condition appelle `__guard()`.
+ * Les `for...of` / `for...in` sont finis, on n'y touche pas.
+ */
+export function instrumentLoops(code) {
+  let out = '';
+  let i = 0;
+  const re = /\b(while|for)\s*\(/g;
+  let m;
+  while ((m = re.exec(code))) {
+    const open = m.index + m[0].length;
+    let depth = 1, j = open;
+    const semis = [];
+    for (; j < code.length && depth > 0; j++) {
+      const c = code[j];
+      if (c === '(' || c === '[' || c === '{') depth++;
+      else if (c === ')' || c === ']' || c === '}') depth--;
+      else if (c === ';' && depth === 1) semis.push(j);
+    }
+    if (depth !== 0) break;
+    const close = j - 1;
+    const guard = (cond) => `(__guard(), ${cond.trim() || 'true'})`;
+    let inner;
+    if (m[1] === 'while') inner = guard(code.slice(open, close));
+    else if (semis.length === 2) inner = `${code.slice(open, semis[0])};${guard(code.slice(semis[0] + 1, semis[1]))};${code.slice(semis[1] + 1, close)}`;
+    else continue;
+    out += code.slice(i, open) + inner;
+    i = close;
+    re.lastIndex = close;
+  }
+  return out + code.slice(i);
+}
+
 export function createTerminalApi(game, log) {
   const userFns = {};
+
+  // Garde-fou : au-delà de MAX_LOOP_STEPS tours de boucle sans rendre la main au navigateur, on stoppe le script.
+  let loopSteps = 0;
+  const guard = () => {
+    if (++loopSteps === 1) setTimeout(() => { loopSteps = 0; });
+    if (loopSteps > MAX_LOOP_STEPS) {
+      loopSteps = 0;
+      game.clearQueue();
+      throw new Error(TIRED_MESSAGE);
+    }
+  };
 
   // Si la file est pleine, on LÈVE une erreur : cela casse la boucle du joueur
   // (sinon un `while (true) move(...)` gèlerait le navigateur).
   const enqueue = (cmd) => {
     if (game.isQueueFull()) {
-      throw new Error(`file pleine (${game.queue.length} commandes). Ta boucle ne s'arrête pas ? Le bouton STOP vide la file.`);
+      throw new Error(`file pleine (${game.queue.length} commandes). ${TIRED_MESSAGE}`);
     }
     // La commande renvoie une promesse résolue quand elle est EXÉCUTÉE (1 par tick) :
     // `await move(...)` permet de relire Position, Scanner... après le mouvement.
@@ -28,7 +75,11 @@ export function createTerminalApi(game, log) {
     get CubesOffsets() { return game.cubesOffsets; },
     get Level() { return game.level.n; },
     get Goal() { return { ...game.level.goal, progress: game.goalProgress }; },
-    get Gates() { return game.gates.map((g) => ({ x: g.x - game.player.x, z: g.z - game.player.z, passed: g.passed })); },
+    // Relatif à la position PRÉVUE (après les déplacements déjà en file) : relire Gates juste après move() est à jour.
+    get Gates() {
+      const p = game.queue.reduce((a, c) => ({ x: a.x + (c.dx ?? 0), z: a.z + (c.dz ?? 0) }), { x: game.player.x, z: game.player.z });
+      return game.gates.map((g) => ({ x: g.x - p.x, z: g.z - p.z, passed: g.passed }));
+    },
     get Position() { return game.player.position; },
     get State() { return game.snapshot(); },
     get Scanner() { return game.scanner; },
@@ -60,6 +111,7 @@ export function createTerminalApi(game, log) {
 
     // ---- aide
     clear() { log('clear'); return undefined; },
+    reset() { game.resetLevel(); return undefined; },
     help() { help(log); return undefined; },
     test() { runTest(game, api, log); return undefined; },
     functions() {
@@ -69,6 +121,7 @@ export function createTerminalApi(game, log) {
     },
 
     userFns,
+    __guard: guard,
   };
 
   // Proxy : les fonctions enregistrées par le joueur sont accessibles directement par leur nom.
@@ -93,7 +146,7 @@ export function format(v) {
 export function evaluate(api, code) {
   // eslint-disable-next-line no-new-func
   const fn = new Function('__api', '__code', 'with (__api) { return eval(__code); }');
-  return fn(api, code);
+  return fn(api, instrumentLoops(code));
 }
 
 /**
@@ -105,7 +158,7 @@ export function compileUserFunction(api, code) {
   if (!m) throw new Error('Le code doit commencer par "function nomDeLaFonction(...) { ... }".');
   const name = m[1];
   // eslint-disable-next-line no-new-func
-  const factory = new Function('__api', `with (__api) { ${code}\n; return ${name}; }`);
+  const factory = new Function('__api', `with (__api) { ${instrumentLoops(code)}\n; return ${name}; }`);
   const fn = factory(api);
   if (typeof fn !== 'function') throw new Error(`"${name}" n'est pas une fonction.`);
   api.userFns[name] = fn;
@@ -132,7 +185,7 @@ function help(log) {
     '               console.log(CubesOffsets[0].y)             -> la hauteur du 1er cube',
     '               console.log(CubesOffsets.length)           -> combien de cubes jaunes',
     '               for (const c of CubesOffsets) console.log(c.x, c.y, c.z)   -> un par ligne',
-    'AUTRES     ->  help()  test()  clear()  functions()',
+    'AUTRES     ->  help()  test()  clear()  reset() (recommence le niveau)  functions()',
     'RÈGLES     ->  jaune touché = ajouté au-dessus | violet touché par le rouge = perdu',
     '               violet = détruit par une balle, ou écrasé par un cube jaune qui lui tombe dessus (+1 balle)',
     '               cube jaune non relié au rouge = détruit | un cube ne flotte jamais : il retombe',

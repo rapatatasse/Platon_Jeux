@@ -84,13 +84,9 @@ if (jaunes) console.log("premier jaune :", jaunes.coordinates[0]);</pre>
       <section id="attendre">
         <h2>Réagir à ce qui se passe : async / await</h2>
         <p>Une fonction normale pose toutes ses commandes d'un coup dans la file, avant qu'elles soient jouées : <code>Position</code> ne change pas pendant la fonction. Pour réagir (par exemple changer de direction quand le pixel est bloqué), écris une fonction <code>async</code> et mets <code>await</code> devant la commande : on attend que le pas soit joué.</p>
-<pre>async function versLaPorte() {
+<pre>
   while (!Gates[0].passed) {
-    const avant = Position.x + "," + Position.z;
-    await move(Math.sign(Gates[0].x), 0);
-    const apres = Position.x + "," + Position.z;
-    if (avant === apres) {
-      await move(0, 1);   // bloqué : on descend
+    //Action
     }
   }
 }</pre>

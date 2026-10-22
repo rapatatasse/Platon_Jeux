@@ -25,6 +25,11 @@ body { min-height: 100vh; }
 #splitter:hover, #splitter.dragging { background: var(--cyan); }
 body.resizing { cursor: col-resize; user-select: none; }
 body.resizing #scene { pointer-events: none; }
+#hsplitter { flex: none; height: 6px; margin: -3px 0; cursor: row-resize; background: var(--border); border-radius: 3px; transition: background .15s; }
+#hsplitter:hover, #hsplitter.dragging { background: var(--cyan); }
+body.resizing-h { cursor: row-resize; user-select: none; }
+body.resizing-h #scene { pointer-events: none; }
+#functions { flex: none; }
 
 .panel { background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px; padding: 8px; display: flex; flex-direction: column; min-height: 0; }
 .panel.grow { flex: 1; }
@@ -75,7 +80,7 @@ body.resizing #scene { pointer-events: none; }
 .hud-goal { background: #0c0e1a; border: 1px solid var(--border); border-radius: 4px; padding: 5px 8px; margin-bottom: 8px; }
 .hud-goal label { display: block; color: var(--muted); font-size: 10px; text-transform: uppercase; }
 .hud-goal b { color: var(--yellow); font-size: 14px; }
-.hud-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 10px; }
+.hud-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px 10px; }
 .hud-grid label { display: block; color: var(--muted); font-size: 10px; text-transform: uppercase; }
 .hud-grid b { font-size: 14px; }
 .hud-progress { height: 5px; background: #0c0e1a; border-radius: 3px; margin-top: 8px; overflow: hidden; }
@@ -103,7 +108,7 @@ body.resizing #scene { pointer-events: none; }
 .fn-name { color: var(--yellow); }
 .fn-args { width: 70px; font-family: inherit; font-size: 12px; color: var(--text); background: #0b0d18; border: 1px solid var(--border); border-radius: 3px; padding: 2px 5px; }
 .fn-empty { color: var(--muted); font-style: italic; }
-.fn-code { width: 100%; resize: vertical; font-family: inherit; font-size: 12px; color: var(--text); background: #0b0d18; border: 1px solid var(--border); border-radius: 4px; padding: 6px; line-height: 1.4; tab-size: 2; }
+.fn-code { width: 100%; flex: 1; min-height: 80px; resize: none; font-family: inherit; font-size: 12px; color: var(--text); background: #0b0d18; border: 1px solid var(--border); border-radius: 4px; padding: 6px; line-height: 1.4; tab-size: 2; }
 .fn-code:focus { outline: none; border-color: var(--yellow); }
 .fn-actions { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
 .fn-hint { color: var(--muted); font-size: 11px; }

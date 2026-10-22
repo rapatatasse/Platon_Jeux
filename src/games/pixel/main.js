@@ -9,7 +9,7 @@ import { FunctionEditor } from './ui/FunctionEditor.js';
 import { Hud } from './ui/Hud.js';
 import { Overlay } from './ui/Overlay.js';
 import { LevelsModal } from './ui/LevelsModal.js';
-import { initSplitter } from './ui/Splitter.js';
+import { initSplitter, initHSplitter } from './ui/Splitter.js';
 
 /**
  * Point d'entrée : assemble logique (core), rendu (render), API terminal et UI.
@@ -18,6 +18,7 @@ import { initSplitter } from './ui/Splitter.js';
 function boot() {
   mountGameChrome();
   initSplitter(document.getElementById('splitter'), document.getElementById('side'));
+  initHSplitter(document.getElementById('hsplitter'), document.getElementById('functions'), document.getElementById('side'));
   const game = new Game({ seed: Date.now() % 100000 });
   const view = new GameView(document.getElementById('scene'), game);
   let terminal;
