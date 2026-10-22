@@ -27,6 +27,8 @@ export class Game {
     this.score = 0;
     this.purplesDestroyed = 0;
     this.state = 'playing';
+    this.testMode = false;
+    this.autoAdvance = true;
     this._bulletId = 0;
     this._bindProgress();
     this.loadLevel(level);
@@ -47,7 +49,7 @@ export class Game {
     this.gates = built.gates;
     this.projectiles = [];
     this.queue = [];
-    this.purpleDirs = new Map();
+    this.purpleDirs = new Map(built.bouncers.map((b) => [`${b.x},0,${b.z}`, b.dx]));
     this.progress = { collect: 0, shoot: 0, gates: 0, purples: 0 };
     this.player.x = built.start.x;
     this.player.z = built.start.z;
@@ -65,9 +67,10 @@ export class Game {
   }
 
   /** Saut direct à un niveau (test / debug). Retourne false si le niveau n'existe pas. */
-  jumpToLevel(n, test = 0) {
+  jumpToLevel(n, test = 0, { testMode = false } = {}) {
     if (!getLevelDef(n, test)) return false;
     this.testIndex = test;
+    this.testMode = testMode;
     this.loadLevel(n);          // remet aussi state = 'playing' (même après une défaite)
     this.events.emit('levelUp', { from: this.level.n, to: n, jump: true });
     return true;
@@ -109,7 +112,7 @@ export class Game {
     this.state = 'levelcomplete';
     this.queue = [];
     this._transition = LEVEL_TRANSITION_TICKS;
-    this.score += 20;
+    if (!this.testMode) this.score += 20;
     this.events.emit('levelComplete', { level: this.level.n, next: getLevelDef(this.level.n + 1) });
   }
 
@@ -153,7 +156,7 @@ export class Game {
   /** Un pas du monde. À appeler toutes les tickMs millisecondes. */
   tick() {
     if (this.state === 'levelcomplete') {
-      if (--this._transition <= 0) {
+      if (this.autoAdvance && !this.testMode && --this._transition <= 0) {
         const from = this.level.n;
         this.loadLevel(from + 1);
         if (this.state === 'playing') this.events.emit('levelUp', { from, to: this.level.n });

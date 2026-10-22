@@ -38,11 +38,15 @@ test('scanner : renvoie violets et jaunes relatifs au rouge, dans la portée seu
   g.world.set(1, 0, -1, CELL.PURPLE);
   g.world.set(3, 0, 0, CELL.YELLOW);
   g.world.set(1, 0, 0, CELL.WHITE);
-  assert.deepEqual(scan(g), [{ type: 'violet', coordinates: [[0, 1], [1, -1]] }], 'jaune hors portée, mur ignoré');
+  assert.deepEqual(scan(g), [
+    { type: 'violet', coordinates: [[0, 1], [1, -1]] },
+    { type: 'mur', coordinates: [[1, 0]] },
+  ], 'jaune hors portée, mur affiché');
   g.player.setOffsets([{ x: 0, y: 1, z: 0 }, { x: 0, y: 2, z: 0 }]);
   assert.deepEqual(scan(g), [
     { type: 'violet', coordinates: [[0, 1], [1, -1]] },
     { type: 'jaune', coordinates: [[3, 0]] },
+    { type: 'mur', coordinates: [[1, 0]] },
   ]);
   g.player.x = 10;
   assert.deepEqual(scan(g), [], 'coordonnées relatives : plus rien autour');
@@ -70,10 +74,22 @@ test('commande asynchrone : la promesse de move() est résolue à l\'exécution 
   assert.deepEqual(api.Scanner, []);
 });
 
+test('Gates tient compte des murs : un pas bloqué ne change pas la position prévue', async () => {
+  const { createTerminalApi } = await import('../src/games/pixel/api/terminalApi.js');
+  const g = emptyGame();
+  g.gates = [{ x: 5, z: 0, passed: false }];
+  g.world.set(1, 0, 0, CELL.WHITE);
+  const api = createTerminalApi(g, () => {});
+  api.move(1, 0);
+  assert.deepEqual(api.Gates[0], { x: 5, z: 0, passed: false });
+  api.move(0, 1);
+  assert.deepEqual(api.Gates[0], { x: 5, z: -1, passed: false });
+});
+
 // ---------------------------------------------------------------- Niveaux
 
-test('9 niveaux, chacun avec au moins un test, cartes bien formées', () => {
-  assert.equal(LEVELS.length, 9);
+test('10 niveaux, chacun avec au moins un test, cartes bien formées', () => {
+  assert.equal(LEVELS.length, 10);
   for (const [i, def] of LEVELS.entries()) {
     const n = i + 1;
     assert.ok(levelTests(n).length >= 1);
@@ -166,14 +182,14 @@ const SOLUTIONS = {
     while (!Gates[0].passed && guard++ < 400) {
       const g = Gates[0];
       const sx = Math.sign(g.x), sz = Math.sign(g.z);
-      const here = Position.x + ',' + Position.z;
+      const here = Gates[0].x + ',' + Gates[0].z;
       let cands = [];
       if (heading && !(heading[0] !== 0 && g.x === 0) && !(heading[1] !== 0 && g.z === 0)) cands.push(heading);
       cands.push([sx, sz], [sx, 0], [0, sz], [1, 0], [-1, 0], [0, 1], [0, -1]);
       cands = cands.filter((d) => (d[0] || d[1]) && !tried.has(here + '|' + key(d)) && !(heading && d[0] === -heading[0] && d[1] === -heading[1]));
       const d = cands[0];
       await move(d[0], d[1]);
-      if ((Position.x + ',' + Position.z) !== here) heading = d; else tried.add(here + '|' + key(d));
+      if ((Gates[0].x + ',' + Gates[0].z) !== here) heading = d; else tried.add(here + '|' + key(d));
     }
   }`,
   5: `function solve() {
@@ -246,6 +262,36 @@ test('niveau 9 : les violets rebondissent sur les murs', () => {
   }
   assert.ok(Math.min(...xs) >= -6 && Math.max(...xs) <= 6, 'ne traverse jamais les murs');
   assert.ok(xs.some((x, i) => i > 1 && x > xs[i - 1]), 'repart vers la droite après le rebond');
+});
+
+test('niveau 10 : 4 portes, seuls les violets marqués rebondissent, tirage fixe par graine', () => {
+  const layout = (t) => {
+    const g = new Game({ level: 10, test: t, seed: 999 });
+    return JSON.stringify([...g.world.cellsOfType(CELL.PURPLE), ...g.world.cellsOfType(CELL.YELLOW)].map((c) => [c.x, c.z]).sort());
+  };
+  assert.equal(layout(0), layout(0));
+  assert.notEqual(layout(0), layout(1));
+  const g = new Game({ level: 10 });
+  assert.equal(g.gates.length, 4);
+  assert.equal(g.purpleDirs.size, 2);
+  const before = [...g.world.cellsOfType(CELL.PURPLE)].filter((c) => !(c.z === 1 && c.x >= 14)).map((c) => `${c.x},${c.z}`).sort().join('|');
+  for (let i = 0; i < 40; i++) { g.enqueue([0, 0]); g.tick(); }
+  const after = [...g.world.cellsOfType(CELL.PURPLE)].filter((c) => !(c.z === 1 && c.x >= 14)).map((c) => `${c.x},${c.z}`).sort().join('|');
+  assert.equal(before, after, 'les violets non marqués ne bougent pas');
+  const lane = [...g.world.cellsOfType(CELL.PURPLE)].filter((c) => c.z === 1 && c.x >= 14);
+  assert.equal(lane.length, 2);
+  assert.ok(lane.every((c) => c.x >= 14 && c.x <= 20), 'les rebondissants restent dans leur allée');
+});
+
+test('mode test en direct : réussir un niveau ne passe pas au suivant', () => {
+  const g = new Game({ level: 1 });
+  g.jumpToLevel(1, 0, { testMode: true });
+  g.progress.gates = 99;
+  g.tick();
+  assert.equal(g.state, 'levelcomplete');
+  for (let i = 0; i < 20; i++) g.tick();
+  assert.equal(g.level.n, 1);
+  assert.equal(g.state, 'levelcomplete');
 });
 
 test('mode test : une fonction qui ne fait rien échoue, une erreur est signalée', async () => {

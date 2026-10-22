@@ -10,6 +10,8 @@ import { mulberry32, hashSeed } from './rng.js';
  *   T  tour violette (2 de haut)             2-9  tour violette de N cubes de haut
  *   P  porte (case à traverser avec le rouge)
  *   R  départ du joueur (sinon : centre de la carte)   .  vide
+ *   ,  vide, zone de placement aléatoire (si `random.inZone`)
+ *   B / b  violet rebondissant, part vers la gauche / la droite (si `onlyMarked`, seuls ceux-là bougent)
  *
  * `random` place en plus des cubes au hasard (graine déterministe) sur les cases vides,
  * à distance mini du départ (`minFromStart`) et espacés entre eux (`spacing`).
@@ -30,6 +32,8 @@ export function buildLevel(def, seed = 1) {
   const world = new World(() => {});
   const gates = [];
   const free = [];
+  const zone = [];
+  const bouncers = [];
   const tx = (x) => x - start.x, tz = (z) => z - start.z;
 
   for (let z = 0; z < h; z++) {
@@ -43,6 +47,11 @@ export function buildLevel(def, seed = 1) {
         case 'T': world.set(wx, 0, wz, CELL.PURPLE); world.set(wx, 1, wz, CELL.PURPLE); break;
         case 'P': gates.push({ x: wx, z: wz, passed: false }); break;
         case 'R': break;
+        case ',': zone.push({ x: wx, z: wz }); break;
+        case 'B': case 'b':
+          world.set(wx, 0, wz, CELL.PURPLE);
+          bouncers.push({ x: wx, z: wz, dx: ch === 'B' ? -1 : 1 });
+          break;
         case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
           for (let y = 0; y < Number(ch); y++) world.set(wx, y, wz, CELL.PURPLE);
           break;
@@ -51,10 +60,10 @@ export function buildLevel(def, seed = 1) {
     }
   }
 
-  if (def.random) placeRandom(world, free, def.random, hashSeed(seed, def.id ?? 0));
+  if (def.random) placeRandom(world, def.random.inZone ? zone : free, def.random, hashSeed(def.fixedSeed ?? seed, def.id ?? 0));
 
   const bounds = { minX: tx(0), maxX: tx(w - 1), minZ: tz(0), maxZ: tz(h - 1), w, h };
-  return { world, gates, start: { x: 0, z: 0 }, bounds };
+  return { world, gates, bouncers, start: { x: 0, z: 0 }, bounds };
 }
 
 function placeRandom(world, free, opts, seed) {

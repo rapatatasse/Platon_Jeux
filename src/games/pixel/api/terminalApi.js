@@ -1,4 +1,5 @@
 import { scanRange } from '../core/scan.js';
+import { CELL } from '../core/constants.js';
 
 /**
  * Ce que le joueur peut utiliser dans le terminal et dans ses fonctions.
@@ -63,10 +64,30 @@ export function createTerminalApi(game, log) {
       throw new Error(`file pleine (${game.queue.length} commandes). ${TIRED_MESSAGE}`);
     }
     // La commande renvoie une promesse résolue quand elle est EXÉCUTÉE (1 par tick) :
-    // `await move(...)` permet de relire Position, Scanner... après le mouvement.
+    // `await move(...)` permet de relire Scanner... après le mouvement.
     return new Promise((resolve) => {
       if (!game.enqueue(cmd, { onDone: resolve })) resolve(false);
     });
+  };
+
+  const planned = () => {
+    const p = { x: game.player.x, z: game.player.z };
+    const visited = new Set();
+    const cells = game.player.cells();
+    for (const c of game.queue) {
+      const dx = c.dx ?? 0, dz = c.dz ?? 0;
+      if (!dx && !dz) continue;
+      // Un pas contre un mur blanc n'est pas joué : la position prévue ne change pas.
+      const blocked = cells.some((q) => {
+        if (game.player.hasLocal(q.lx + dx, q.ly, q.lz + dz)) return false;
+        return game.world.get(p.x + q.lx + dx, q.ly, p.z + q.lz + dz) === CELL.WHITE;
+      });
+      if (blocked) continue;
+      p.x += dx;
+      p.z += dz;
+      visited.add(`${p.x},${p.z}`);
+    }
+    return { p, visited };
   };
 
   const api = {
@@ -75,12 +96,12 @@ export function createTerminalApi(game, log) {
     get CubesOffsets() { return game.cubesOffsets; },
     get Level() { return game.level.n; },
     get Goal() { return { ...game.level.goal, progress: game.goalProgress }; },
-    // Relatif à la position PRÉVUE (après les déplacements déjà en file) : relire Gates juste après move() est à jour.
+    // Gates est relative à la position PRÉVUE (après les déplacements déjà en file) :
+    // la relire juste après move() est à jour.
     get Gates() {
-      const p = game.queue.reduce((a, c) => ({ x: a.x + (c.dx ?? 0), z: a.z + (c.dz ?? 0) }), { x: game.player.x, z: game.player.z });
-      return game.gates.map((g) => ({ x: g.x - p.x, z: g.z - p.z, passed: g.passed }));
+      const { p, visited } = planned();
+      return game.gates.map((g) => ({ x: g.x - p.x, z: g.z - p.z, passed: g.passed || visited.has(`${g.x},${g.z}`) }));
     },
-    get Position() { return game.player.position; },
     get State() { return game.snapshot(); },
     get Scanner() { return game.scanner; },
     get ScannerRange() { return scanRange(game.player); },
@@ -174,10 +195,10 @@ function help(log) {
     '  moveYellow(id, [x, y, z], ...) : nouvel offset des cubes jaunes. Ex : moveYellow(0, [0, 1, 0]) place le cube 0 au-dessus du rouge',
     '  wait(n)                       : ne rien faire pendant n pas',
     'STOP       ->  stop() ou le bouton STOP : annule toutes les commandes en attente (boucle trop longue...).',
-    'VARIABLES  ->  BulletsCount   CubesOffsets   Level   Goal   Gates (portes, relatives à toi)   Position   State',
-    '               Scanner (violets/jaunes proches, relatifs à toi)   ScannerRange (portée : 1 + jaunes empilés sur le rouge)',
-    '               Scanner -> [{ type: "violet", coordinates: [[dx, dz], ...] }, { type: "jaune", coordinates: [...] }]',
-    'ATTENDRE    ->  dans une fonction async : await move(1, 0) attend que le pas soit fait, puis relis Position / Scanner.',
+    'VARIABLES  ->  BulletsCount   CubesOffsets   Level   Goal   Gates (portes, relatives à toi)   State',
+    '               Scanner (violets/jaunes/murs proches, relatifs à toi)   ScannerRange (portée : 1 + jaunes empilés sur le rouge)',
+    '               Scanner -> [{ type: "violet", coordinates: [[dx, dz], ...] }, { type: "jaune", coordinates: [...] }, { type: "mur", coordinates: [...] }]',
+    'ATTENDRE    ->  dans une fonction async : await move(1, 0) attend que le pas soit fait, puis relis Scanner.',
     'AIDE+       ->  le bouton "Aide" ouvre la page complète (commandes, scanner, bases de JavaScript).',
     'AFFICHER   ->  tape juste le nom :  CubesOffsets          -> affiche sa valeur',
     '               console.log(CubesOffsets)                  -> pareil, marche aussi dans tes fonctions',

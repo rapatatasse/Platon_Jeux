@@ -52,6 +52,12 @@ export class FunctionEditor {
     this.codeEl.addEventListener('keydown', (e) => {
       if (e.key === 'Tab') { e.preventDefault(); this.insertAtCursor('  '); }
       if (e.key === 'Enter' && e.ctrlKey) this.save();
+      else if (e.key === 'Enter' && !e.shiftKey && !e.altKey && !e.metaKey) {
+        e.preventDefault();
+        const { selectionStart: s, value } = this.codeEl;
+        const indent = value.slice(value.lastIndexOf('\n', s - 1) + 1, s).match(/^[ \t]*/)[0];
+        this.insertAtCursor(`\n${indent}`);
+      }
     });
 
     for (const f of this.functions) this.compile(f, true);
@@ -135,8 +141,10 @@ export class FunctionEditor {
         <span class="fn-name">${f.name}(</span><input class="fn-args" placeholder="args" /><span class="fn-name">)</span>
         <button class="btn-small" data-a="run">Lancer</button>
         <button class="btn-small" data-a="edit">Éditer</button>
+        <button class="btn-small validate" data-a="validate" title="Joue cette fonction sur tous les tests du niveau actuel">Valider le niveau</button>
         <button class="btn-small danger" data-a="del">X</button>
       `;
+      row.querySelector('[data-a="validate"]').onclick = () => this.onValidate?.(f.name);
       const args = row.querySelector('.fn-args');
       row.querySelector('[data-a="run"]').onclick = () => this.run(f, args.value);
       args.addEventListener('keydown', (e) => { if (e.key === 'Enter') this.run(f, args.value); });

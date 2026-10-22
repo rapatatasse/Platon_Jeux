@@ -11,10 +11,10 @@ export function scanRange(player) {
   return r;
 }
 
-const NAMES = [[CELL.PURPLE, 'violet'], [CELL.YELLOW, 'jaune']];
+const NAMES = [[CELL.PURPLE, 'violet'], [CELL.YELLOW, 'jaune'], [CELL.WHITE, 'mur']];
 
 /**
- * Retourne [{ type: 'violet' | 'jaune', coordinates: [[dx, dz], ...] }, ...]
+ * Retourne [{ type: 'violet' | 'jaune' | 'mur', coordinates: [[dx, dz], ...] }, ...]
  * Coordonnées relatives au rouge (dx : droite +, dz : bas de l'écran +). Les types absents sont omis.
  */
 export function scan(game) {

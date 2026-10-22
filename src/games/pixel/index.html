@@ -14,24 +14,6 @@
       <main id="scene">
         <div id="overlay"></div>
         <div id="levels-modal"></div>
-        <svg id="axes" viewBox="0 0 150 130" width="150" height="130" role="img" aria-label="Repère des axes : X vers la droite, Z vers le bas de l'écran, Y vers le haut">
-          <defs>
-            <marker id="ax-x" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#ff6b6b" /></marker>
-            <marker id="ax-y" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#5ef28a" /></marker>
-            <marker id="ax-z" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#4fb4ff" /></marker>
-          </defs>
-          <circle cx="50" cy="65" r="3.5" fill="#e6e8f5" />
-          <line x1="50" y1="65" x2="118" y2="65" stroke="#ff6b6b" stroke-width="2.5" marker-end="url(#ax-x)" />
-          <line x1="50" y1="65" x2="50" y2="14" stroke="#5ef28a" stroke-width="2.5" marker-end="url(#ax-y)" />
-          <line x1="50" y1="65" x2="50" y2="112" stroke="#4fb4ff" stroke-width="2.5" marker-end="url(#ax-z)" />
-          <text x="124" y="69" fill="#ff6b6b">X</text>
-          <text x="124" y="81" fill="#ff6b6b" class="ax-sub">droite +</text>
-          <text x="6" y="69" fill="#ff6b6b" class="ax-sub">- gauche</text>
-          <text x="56" y="20" fill="#5ef28a">Y</text>
-          <text x="56" y="32" fill="#5ef28a" class="ax-sub">hauteur</text>
-          <text x="56" y="116" fill="#4fb4ff">Z</text>
-          <text x="68" y="116" fill="#4fb4ff" class="ax-sub">bas +</text>
-        </svg>
         <button id="levels" class="btn-small mute levels-btn">Niveaux</button>
         <button id="mute" class="btn-small mute">Musique : on</button>
       </main>
@@ -54,7 +36,7 @@
         <li>Lire un objectif, observer le plateau et décomposer un problème en étapes.</li>
       </ul>
       <h2>Comment jouer à PIXEL ?</h2>
-      <p>Saisis les commandes dans le terminal à droite ou crée une fonction dans le panneau dédié, puis exécute ton programme. Les neuf niveaux proposent des objectifs progressifs autour du déplacement, du scanner, des portes, du tir et du placement des cubes. Un mode test rejoue ta fonction sur plusieurs variantes de chaque niveau. Le bouton Aide ouvre la <a href="/games/pixel/aide/">page d’aide</a> avec les commandes et les bases de JavaScript.</p>
+      <p>Saisis les commandes dans le terminal à droite ou crée une fonction dans le panneau dédié, puis exécute ton programme. Les dix niveaux proposent des objectifs progressifs autour du déplacement, du scanner, des portes, du tir et du placement des cubes. Un mode test rejoue ta fonction sur plusieurs variantes de chaque niveau. Le bouton Aide ouvre la <a href="/games/pixel/aide/">page d’aide</a> avec les commandes et les bases de JavaScript.</p>
       <h2>Questions fréquentes</h2>
       <details><summary>Faut-il déjà savoir coder ?</summary><p>Non. PIXEL est une initiation : les commandes et l’aide intégrée permettent de commencer pas à pas.</p></details>
       <details><summary>PIXEL est-il gratuit ?</summary><p>Oui, le jeu est accessible gratuitement directement dans le navigateur.</p></details>

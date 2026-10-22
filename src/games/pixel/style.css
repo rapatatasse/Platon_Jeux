@@ -49,8 +49,7 @@ body.resizing-h #scene { pointer-events: none; }
 .mute.levels-btn { right: 130px; }
 
 /* Repère des axes (caméra fixe : X vers la droite, Z vers le bas de l'écran, Y vers le haut) */
-#axes { position: absolute; left: 10px; bottom: 10px; z-index: 5; pointer-events: none; background: rgba(15, 17, 32, .55); border: 1px solid var(--border); border-radius: 8px; font-family: var(--mono); font-size: 13px; font-weight: 700; }
-#axes .ax-sub { font-size: 9px; font-weight: 400; fill: var(--muted); }
+
 
 /* Modale des niveaux */
 .levels-modal { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(8, 9, 20, .75); backdrop-filter: blur(3px); z-index: 20; }
@@ -66,6 +65,8 @@ body.resizing-h #scene { pointer-events: none; }
 .lv-count { margin-left: auto; color: var(--yellow); }
 .lv-chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
 .chip { font-size: 11px; padding: 1px 8px; border-radius: 10px; border: 1px solid var(--border); color: var(--muted); }
+button.chip { font-family: inherit; background: transparent; cursor: pointer; }
+button.chip:hover:not(:disabled) { background: #2a2f55; }
 .chip.ok { border-color: var(--green); color: var(--green); }
 .chip.ko { border-color: #c43a4a; color: #ff7b8a; }
 .lv-actions { display: flex; gap: 6px; }
@@ -104,7 +105,12 @@ body.resizing-h #scene { pointer-events: none; }
 
 /* Fonctions */
 .fn-list { display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; margin-bottom: 6px; }
-.fn-row { display: flex; align-items: center; gap: 4px; }
+.fn-row { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+.btn-small.validate { background: #1f6b3a; border-color: var(--green); color: #fff; }
+.btn-small.validate:hover { background: #2a8a4b; }
+.hud-tests { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 4px; }
+.hud-tests-count { color: var(--muted); font-size: 11px; margin-right: 4px; }
+.hud-tests .chip.running { border-color: var(--yellow); color: var(--yellow); }
 .fn-name { color: var(--yellow); }
 .fn-args { width: 70px; font-family: inherit; font-size: 12px; color: var(--text); background: #0b0d18; border: 1px solid var(--border); border-radius: 3px; padding: 2px 5px; }
 .fn-empty { color: var(--muted); font-style: italic; }

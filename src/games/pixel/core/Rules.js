@@ -274,9 +274,11 @@ function stepBouncers(game) {
   const k = (c) => `${c.x},${c.y},${c.z}`;
   for (const p of [...world.cellsOfType(CELL.PURPLE)]) {
     if (world.get(p.x, p.y, p.z) !== CELL.PURPLE) continue;
+    if (game.level.onlyMarked && !game.purpleDirs.has(k(p))) continue;
     let dx = game.purpleDirs.get(k(p)) ?? -1;
     game.purpleDirs.delete(k(p));
-    const blocked = (d) => world.has(p.x + d, p.y, p.z) || player.occupies(p.x + d, p.y, p.z);
+    const blocked = (d) => world.has(p.x + d, p.y, p.z) || player.occupies(p.x + d, p.y, p.z)
+      || game.gates.some((g) => g.x === p.x + d && g.z === p.z);
     if (blocked(dx)) dx = -dx;
     if (blocked(dx)) { game.purpleDirs.set(k(p), dx); continue; }
     world.remove(p.x, p.y, p.z);

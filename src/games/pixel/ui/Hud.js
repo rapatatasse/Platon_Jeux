@@ -1,4 +1,5 @@
-import { LEVEL_COUNT } from '../core/levels/index.js';
+import { LEVEL_COUNT, levelTests } from '../core/levels/index.js';
+import { loadProgress } from '../api/levelTests.js';
 
 /** Affichage des stats (niveau, balles, cubes, file...). Mis à jour à chaque tick. */
 export class Hud {
@@ -13,7 +14,7 @@ export class Hud {
           <button class="btn-small" data-nav="1" title="Niveau suivant (test)">▶</button>
         </span>
       </div>
-      <div class="hud-goal"><label>Objectif</label><b data-k="goal"></b></div>
+      <div class="hud-goal"><label>Objectif</label><b data-k="goal"></b><div class="hud-tests"></div></div>
       <div class="hud-grid">
         <div><label>Cubes</label><b data-k="cubes"></b></div>
         <div><label>Balles</label><b data-k="bullets"></b></div>
@@ -36,7 +37,32 @@ export class Hud {
     this.navBtns = [...root.querySelectorAll('[data-nav]')];
     for (const b of this.navBtns) b.onclick = () => game.jumpToLevel(game.level.n + Number(b.dataset.nav));
     this.bar = root.querySelector('.hud-progress-bar');
+    this.testsEl = root.querySelector('.hud-tests');
+    this.failed = new Set();
+    this.running = null;
+    game.events.on('levelLoaded', () => this.renderTests());
+    game.events.on('testRunning', (r) => { this.running = `${r.level}:${r.index}`; this.renderTests(); });
+    game.events.on('testResult', (r) => {
+      this.running = null;
+      this.failed[r.ok ? 'delete' : 'add'](`${r.level}:${r.index}`);
+      this.renderTests();
+    });
     this.update();
+    this.renderTests();
+  }
+
+  /** Tests validés du niveau courant (vert = validé, rouge = échec du dernier essai), comme sur CodinGame. */
+  renderTests() {
+    const n = this.game.level?.n;
+    if (!n) return;
+    const tests = levelTests(n);
+    const passed = loadProgress()[n] ?? {};
+    const done = tests.filter((t) => passed[t.index]).length;
+    this.testsEl.innerHTML = `<span class="hud-tests-count">Tests validés : <b>${done} / ${tests.length}</b></span>` + tests.map((t) => {
+      const key = `${n}:${t.index}`;
+      const cls = this.running === key ? 'running' : passed[t.index] ? 'ok' : this.failed.has(key) ? 'ko' : '';
+      return `<span class="chip ${cls}" title="${t.name}">${passed[t.index] ? '✓' : this.failed.has(key) ? '✗' : t.index + 1}</span>`;
+    }).join('');
   }
 
   update() {

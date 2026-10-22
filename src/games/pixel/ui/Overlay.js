@@ -8,9 +8,9 @@ export class Overlay {
 
     game.events.on('levelComplete', ({ level, next }) => this.showBanner(
       `Niveau ${level} réussi !`,
-      next ? `Prochain niveau : ${next.name}` : 'Dernier niveau terminé…',
+      game.autoAdvance ? (next ? `Prochain niveau : ${next.name}` : 'Dernier niveau terminé…') : (next ? `Clique sur ▶ pour passer au niveau suivant (${next.name})` : 'Dernier niveau terminé !'),
       'success',
-      (game.tickMs * 6) / 1000,
+      game.autoAdvance ? (game.tickMs * 6) / 1000 : 4,
     ));
     game.events.on('levelLoaded', () => this.hide());   // ferme aussi l'écran "Perdu" lors d'un saut de niveau
     game.events.on('levelUp', ({ to }) => this.showBanner(`Niveau ${to} · ${game.level.name}`, game.level.intro, 'level', 5));

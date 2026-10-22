@@ -7,6 +7,7 @@ import { createTerminalApi } from './api/terminalApi.js';
 import { Terminal } from './ui/Terminal.js';
 import { FunctionEditor } from './ui/FunctionEditor.js';
 import { Hud } from './ui/Hud.js';
+import { LiveTests } from './ui/LiveTests.js';
 import { Overlay } from './ui/Overlay.js';
 import { LevelsModal } from './ui/LevelsModal.js';
 import { initSplitter, initHSplitter } from './ui/Splitter.js';
@@ -20,6 +21,7 @@ function boot() {
   initSplitter(document.getElementById('splitter'), document.getElementById('side'));
   initHSplitter(document.getElementById('hsplitter'), document.getElementById('functions'), document.getElementById('side'));
   const game = new Game({ seed: Date.now() % 100000 });
+  game.autoAdvance = false;   // réussir un niveau ne change pas de niveau : on passe au suivant avec ▶ ou « Niveaux »
   const view = new GameView(document.getElementById('scene'), game);
   let terminal;
   const log = (kind, text) => terminal?.log(kind, text);
@@ -28,10 +30,12 @@ function boot() {
 
   terminal = new Terminal(document.getElementById('terminal'), api);
   const editor = new FunctionEditor(document.getElementById('functions'), api, log);
-  const levelsModal = new LevelsModal(document.getElementById('levels-modal'), { game, editor });
+  const live = new LiveTests({ game, api, log });
+  editor.onValidate = (name) => live.validate(game.level.n, name);
+  const levelsModal = new LevelsModal(document.getElementById('levels-modal'), { game, editor, live });
   document.getElementById('levels').onclick = () => levelsModal.open();
   const hud = new Hud(document.getElementById('hud'), game);
-  new Overlay(document.getElementById('overlay'), game, { onRestart: () => location.reload() });
+  new Overlay(document.getElementById('overlay'), game, { onRestart: () => game.resetLevel() });
 
   const muteBtn = document.getElementById('mute');
   const refreshMute = () => { muteBtn.textContent = music.muted ? 'Musique : off' : 'Musique : on'; };

@@ -3,6 +3,7 @@ import { WorldRenderer } from './WorldRenderer.js';
 import { PlayerRenderer } from './PlayerRenderer.js';
 import { BulletRenderer } from './BulletRenderer.js';
 import { GateRenderer } from './GateRenderer.js';
+import { AxesRenderer } from './AxesRenderer.js';
 import { Effects } from './Effects.js';
 import { Sounds } from './Sounds.js';
 import { COLORS, LEVEL_TRANSITION_TICKS } from '../core/constants.js';
@@ -19,6 +20,7 @@ export class GameView {
     this.player = new PlayerRenderer(this.view.scene, game.player);
     this.bullets = new BulletRenderer(this.view.scene, game);
     this.gates = new GateRenderer(this.view.scene);
+    this.axes = new AxesRenderer(this.view.scene);
     this.effects = new Effects(this.view.scene);
     this.sounds = new Sounds();
     this.time = 0;
@@ -30,6 +32,7 @@ export class GameView {
     this.world.setWorld(this.game.world);
     this.gates.setGates(this.game.gates);
     this.view.setBoard(this.game.level.bounds);
+    this.axes.setBounds(this.game.level.bounds);
     this.bullets.clear();
     this.player.markDirty();
     this.player.group.position.set(this.game.player.x, 0, this.game.player.z);

@@ -57,7 +57,6 @@
         <table>
           <tr><th>Variable</th><th>Contenu</th></tr>
           <tr><td><code>Gates</code></td><td>Les portes, relatives à toi : <code>[{ x: 8, z: -6, passed: false }]</code></td></tr>
-          <tr><td><code>Position</code></td><td>Ta position <code>{ x, y, z }</code>.</td></tr>
           <tr><td><code>BulletsCount</code></td><td>Nombre de balles.</td></tr>
           <tr><td><code>CubesOffsets</code></td><td>Tes cubes jaunes, relatifs au rouge : <code>[{ x: 0, y: 1, z: 0 }, ...]</code>. L'indice dans la liste est l'id du cube pour <code>moveYellow</code>.</td></tr>
           <tr><td><code>Scanner</code></td><td>Ce qui est autour de toi (voir plus bas).</td></tr>
@@ -69,7 +68,7 @@
 
       <section id="scanner">
         <h2>Le scanner</h2>
-        <p>La variable <code>Scanner</code> liste les violets et les jaunes proches. La zone scannée est le carré de côté <code>2 × portée + 1</code> autour du rouge. La portée vaut <b>1</b>, plus <b>1 par cube jaune empilé directement au-dessus du rouge</b>.</p>
+        <p>La variable <code>Scanner</code> liste les violets, les jaunes et les murs (<code>"mur"</code>) proches. La zone scannée est le carré de côté <code>2 × portée + 1</code> autour du rouge. La portée vaut <b>1</b>, plus <b>1 par cube jaune empilé directement au-dessus du rouge</b>.</p>
 <pre>Scanner
 [
   { "type": "violet", "coordinates": [[0, 1], [1, -1]] },
@@ -83,7 +82,7 @@ if (jaunes) console.log("premier jaune :", jaunes.coordinates[0]);</pre>
 
       <section id="attendre">
         <h2>Réagir à ce qui se passe : async / await</h2>
-        <p>Une fonction normale pose toutes ses commandes d'un coup dans la file, avant qu'elles soient jouées : <code>Position</code> ne change pas pendant la fonction. Pour réagir (par exemple changer de direction quand le pixel est bloqué), écris une fonction <code>async</code> et mets <code>await</code> devant la commande : on attend que le pas soit joué.</p>
+        <p>Une fonction normale pose toutes ses commandes d'un coup dans la file, avant qu'elles soient jouées : <code>Scanner</code> ne change pas pendant la fonction. Pour réagir (par exemple changer de direction quand le pixel est bloqué), écris une fonction <code>async</code> et mets <code>await</code> devant la commande : on attend que le pas soit joué.</p>
 <pre>
   while (!Gates[0].passed) {
     //Action
@@ -120,7 +119,7 @@ Math.max(2, 5)   // 5     Math.min(2, 5) // 2</pre>
         <h3>Conditions</h3>
 <pre>if (BulletsCount &gt; 0) {
   fire(1, 0, 0);
-} else if (Position.x &lt; 0) {
+} else if (Gates[0].x &lt; 0) {
   move(1, 0);
 } else {
   wait(1);

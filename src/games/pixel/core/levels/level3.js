@@ -16,7 +16,7 @@ const snake = (gx, gz, turn = false) => {
 export default {
   id: 3,
   name: 'Le serpent',
-  intro: 'Un seul couloir en serpent. Si ton pixel n\'avance plus, change de direction : écris une fonction async avec await move(...) et compare Position avant/après.',
+  intro: 'Un seul couloir en serpent. Si ton pixel n\'avance plus, change de direction : écris une fonction async avec await move(...) et compare Gates avant/après.',
   goal: { type: 'gates', count: 1 },
   bullets: 0,
   purpleMoveEvery: 0,

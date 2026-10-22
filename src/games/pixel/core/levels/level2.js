@@ -13,7 +13,7 @@ const corridor = (gx, gz, flip = false) => {
 export default {
   id: 2,
   name: 'Le virage',
-  intro: 'Un couloir de 5 cases de large qui tourne. La porte est au bout : adapte ton trajet quand le mur te bloque.',
+  intro: 'Un couloir de 5 cases de large qui tourne. La porte est au bout : adapte ton trajet quand le mur te bloque en utilisant la position de la porte avant et après votre action ou plus pro utilier Scanner (il montre aussi les murs).',
   goal: { type: 'gates', count: 1 },
   bullets: 0,
   purpleMoveEvery: 0,
