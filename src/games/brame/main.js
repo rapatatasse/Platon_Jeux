@@ -61,7 +61,7 @@ function toolsHtml(p) {
   const human = isHuman(p);
   let out = game.dice.length ? `<div class="dice">${game.dice.map((_, i) => dieHtml(i)).join('')}</div>` : '';
   if (game.pyr && game.phase === 'pyramid') out += `<div class="pyr-info"><span class="pdie">${game.pyr.steps}</span> pas de pyramide</div>`;
-  if (!human) return `${out}<p class="thinking">L'ordinateur réfléchit…</p>`;
+  if (!human) return `${out}<p class="thinking">${ui.lastLog || "L'ordinateur réfléchit…"}</p>`;
   if (game.phase === 'idle') {
     out += `<button type="button" class="btn btn-main btn-gold" data-act="roll">Lancer les 3 dés</button>`;
     if (game.attackOptions().length) out += `<button type="button" class="btn btn-orange" data-act="attack">Attaquer</button>`;
@@ -265,7 +265,7 @@ function restore() {
 }
 
 game.on('change', () => { render(); persist(); });
-game.on('log', (msg) => ui.logs.push(msg));
+game.on('log', (msg) => { ui.logs.push(msg); ui.lastLog = msg; console.log('[brame]', msg); });
 game.on('moved', (m) => {
   ui.moving = m;
   animating = true;
