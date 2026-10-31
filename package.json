@@ -1,6 +1,6 @@
 {
   "name": "platon-jeux",
-  "version": "1.0.0",
+  "version": "1.5",
   "description": "Plateforme de jeux éducatifs Three.js — Platon Formation (platonformation.com).",
   "type": "module",
   "private": true,
