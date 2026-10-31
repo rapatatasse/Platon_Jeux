@@ -141,16 +141,35 @@ export class Game extends Emitter {
 
   /** Cases atteignables par un pion de `player` partant de `from` en exactement `n` pas. */
   destinations(from, n, player = this.current) {
-    let layer = new Set([from]);
+    const layers = this._layers(from, n, player);
+    return [...layers[n]];
+  }
+
+  _next(id, k, n, player) {
+    const out = (id === RESERVE ? startCells(player) : [...NEIGHBORS[id]]).filter((m) => !this.isBlocked(m, player));
+    if (k === n - 1 && isGoal(id, player)) out.push(EXIT);
+    return out;
+  }
+
+  _layers(from, n, player) {
+    const layers = [new Set([from])];
     for (let k = 0; k < n; k++) {
       const next = new Set();
-      layer.forEach((id) => {
-        (id === RESERVE ? startCells(player) : NEIGHBORS[id]).forEach((m) => { if (!this.isBlocked(m, player)) next.add(m); });
-        if (k === n - 1 && isGoal(id, player)) next.add(EXIT);
-      });
-      layer = next;
+      layers[k].forEach((id) => this._next(id, k, n, player).forEach((m) => next.add(m)));
+      layers.push(next);
     }
-    return [...layer];
+    return layers;
+  }
+
+  /** Un chemin de exactement `n` pas de `from` à `to` (pour animer le déplacement), départ et arrivée inclus. */
+  path(from, to, n, player = this.current) {
+    const layers = this._layers(from, n, player);
+    const path = [to];
+    for (let k = n - 1; k >= 0; k--) {
+      const target = path[0];
+      path.unshift([...layers[k]].find((id) => this._next(id, k, n, player).includes(target)));
+    }
+    return path;
   }
 
   ownCells(player = this.current) {
@@ -184,6 +203,7 @@ export class Game extends Emitter {
     if (!this.sources().includes(from)) return false;
     const n = idxs.reduce((t, i) => t + this.dice[i].v, 0);
     if (!this.destinations(from, n).includes(to)) return false;
+    this.emit('moved', { player: this.current, from, to, path: this.path(from, to, n) });
     this._take(from);
     idxs.forEach((i) => { this.dice[i].used = true; });
     this.moveLimit -= 1;

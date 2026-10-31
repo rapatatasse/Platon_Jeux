@@ -1,6 +1,6 @@
 // Rendu vectoriel (SVG) du plateau, des pions et des pyramides de BRAME.
 // Petit effet 3D uniquement dans le sens de la hauteur : pions = disques empilés, pyramides à deux faces.
-import { CIRCLES, COLS, EXIT, NODES, ROWS, cellId, goalRow, parseCell } from '../core/board.js';
+import { CIRCLES, COLS, EXIT, NODES, RESERVE, ROWS, cellId, goalRow, parseCell, startRow } from '../core/board.js';
 
 // Plateau horizontal : les rangées vont de droite (rangée 0) à gauche (rangée 10, départ du Noir),
 // les 3 colonnes deviennent 3 lignes.
@@ -15,6 +15,13 @@ export const CIRCLE_POS = { k0: { x: px(5), y: 195, r: 28 }, k1: { x: px(5), y: 
 export function nodePos(id) {
   const c = parseCell(id);
   return c ? { x: px(c.row), y: YS[c.col] } : { x: CIRCLE_POS[id].x, y: CIRCLE_POS[id].y };
+}
+
+/** Position d'un pion en déplacement : le camp et la sortie sont juste hors du plateau, dans la ligne du premier / dernier pas. */
+export function ghostPos(id, player, path) {
+  if (id === RESERVE) return { x: px(startRow(player)) + (player === 0 ? -LEN : LEN) * 1.1, y: nodePos(path[1]).y };
+  if (id === EXIT) return { x: px(goalRow(player)) + (player === 0 ? LEN : -LEN) * 1.1, y: nodePos(path[path.length - 2]).y };
+  return nodePos(id);
 }
 
 export const SKINS = [
@@ -52,13 +59,12 @@ export const SYMBOLS = `
 
 const f = (n) => Math.round(n * 10) / 10;
 
+const PYRAMIDS = ['/images/brame/Pyramide%20Seth.png', '/images/brame/Pyramide%20Horus.png'];
+
+/** Pyramide du joueur : image fournie (Seth ou Horus), avec ombre portée. */
 export function pyramidMarkup(owner, x = 0, y = 0, scale = 1) {
-  const s = SKINS[owner];
   return `<g class="pyramid p${owner}" transform="translate(${f(x)} ${f(y)}) scale(${scale})">
-    <ellipse cx="2" cy="8" rx="30" ry="9" fill="rgba(0,0,0,.25)"/>
-    <polygon points="0,-40 -24,4 3,13" fill="${s.pyrL}" stroke="${s.rim}" stroke-width="1.5" stroke-linejoin="round"/>
-    <polygon points="0,-40 3,13 28,-2" fill="${s.pyrR}" stroke="${s.rim}" stroke-width="1.5" stroke-linejoin="round"/>
-    <path d="M-8,-8 l6,3 M-12,-1 l8,4" stroke="${s.mark}" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+    <image href="${PYRAMIDS[owner]}" x="-30" y="-46" width="60" height="60" preserveAspectRatio="xMidYMid meet"/>
   </g>`;
 }
 
@@ -75,13 +81,15 @@ export function stackMarkup(owner, count, x = 0, y = 0, { cap = 8, badge = true,
     out += `<ellipse cx="0" cy="${c}" rx="24" ry="12" fill="${s.top}" stroke="${s.rim}" stroke-width="1"/>`;
   }
   const top = -(layers - 1) * thick;
-  out += `<use href="#scarab" x="-9" y="${top - 10}" width="18" height="20" style="color:${s.mark};--cut:${s.top}" fill="${s.mark}" stroke="${s.mark}"/>`;
+  out += `<g transform="translate(0 ${top}) scale(1 0.55) rotate(${owner === 0 ? 90 : -90})"><use href="#scarab" x="-13" y="-17" width="26" height="34" style="color:${s.mark};--cut:${s.top}" fill="${s.mark}" stroke="${s.mark}"/></g>`;
   if (badge && count > 1) out += `<g transform="translate(24 ${top - 16})"><circle r="10" fill="#fff9e3" stroke="#3a2813" stroke-width="2"/><text y="5" text-anchor="middle" font-size="14" font-weight="700" fill="#3a2813" font-family="Georgia,serif">${count}</text></g>`;
   return `${out}</g>`;
 }
 
 function boardLayer() {
-  let s = `<g filter="url(#cloth)"><rect x="14" y="14" width="${VIEW.w - 28}" height="${VIEW.h - 28}" rx="10" fill="#f6f1e2" stroke="#d9cfb6" stroke-width="3"/>`;
+  let s = `<g>`;
+  s += `<image href="/images/brame/fond%20plateau.jpg" x="14" y="14" width="${VIEW.w - 28}" height="${VIEW.h - 28}" preserveAspectRatio="xMidYMid slice" clip-path="url(#clothclip)" opacity="0.8"/><clipPath id="clothclip"><rect x="14" y="14" width="${VIEW.w - 28}" height="${VIEW.h - 28}" rx="10"/></clipPath>`;
+  s += `<g filter="url(#cloth)" opacity="0.92">`;
   s += `<g stroke="#2e3a3c" stroke-width="3.5" stroke-linecap="round" fill="none">`;
   PASSAGE_LINES.forEach(([a, b]) => {
     const pa = nodePos(a);
@@ -117,7 +125,10 @@ function boardLayer() {
  */
 export function renderBoard(svg, game, ui = { marks: {}, selected: null }) {
   const items = [];
-  Object.entries(game.cells).forEach(([id, c]) => items.push({ id, y: nodePos(id).y, svg: stackMarkup(c.owner, c.count, nodePos(id).x, nodePos(id).y + 4) }));
+  const cells = { ...game.cells };
+  const dest = ui.moving?.to;
+  if (dest && cells[dest]) cells[dest] = { ...cells[dest], count: cells[dest].count - 1 };
+  Object.entries(cells).filter(([, c]) => c.count > 0).forEach(([id, c]) => items.push({ id, y: nodePos(id).y, svg: stackMarkup(c.owner, c.count, nodePos(id).x, nodePos(id).y + 4) }));
   game.pyramids.forEach((id, p) => { if (id) items.push({ id, y: nodePos(id).y + 1, svg: pyramidMarkup(p, nodePos(id).x, nodePos(id).y + 4) }); });
   items.sort((a, b) => a.y - b.y);
   const right = goalRow(game.current) === 0;
@@ -138,5 +149,5 @@ export function renderBoard(svg, game, ui = { marks: {}, selected: null }) {
       : `<circle data-node="${id}" cx="${p.x}" cy="${p.y}" r="${CIRCLE_POS[id].r}" fill="transparent"/>`;
   }).join('');
   const exitHit = `<rect data-node="${EXIT}" x="${exit.x}" y="${exit.y}" width="${exit.w}" height="${exit.h}" fill="transparent"/>`;
-  svg.innerHTML = `${boardLayer()}${marks}${items.map((i) => i.svg).join('')}<g class="hits">${hits}${exitHit}</g>`;
+  svg.innerHTML = `${boardLayer()}${marks}${items.map((i) => i.svg).join('')}<g id="ghost"></g><g class="hits">${hits}${exitHit}</g>`;
 }

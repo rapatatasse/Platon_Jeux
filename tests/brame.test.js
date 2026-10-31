@@ -206,3 +206,20 @@ test('la partie se sauvegarde et se recharge à l\'identique (reprise après rec
   assert.equal(h.moveLimit, Infinity);
   assert.ok(h.move('reserve', cellId(1, 8), [1]) || h.freeDice().length >= 0);
 });
+
+test('un déplacement fournit un chemin case par case de la bonne longueur', () => {
+  const g = new Game({ rng: seq(2, 3, 5) });
+  g.roll();
+  let moved = null;
+  g.on('moved', (m) => { moved = m; });
+  g.move('reserve', cellId(1, 9), [0]);
+  assert.equal(moved.path.length, 3);
+  assert.equal(moved.path[0], RESERVE);
+  assert.equal(moved.path[2], cellId(1, 9));
+  assert.ok(moved.path[1].endsWith('r10'));
+  const h = new Game();
+  empty(h);
+  put(h, cellId(0, 1), 0, 1);
+  const p = h.path(cellId(0, 1), EXIT, 2);
+  assert.deepEqual(p, [cellId(0, 1), cellId(0, 0), EXIT]);
+});

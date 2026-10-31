@@ -2,7 +2,7 @@ import '../../shared/theme.js';
 import './style.css';
 import { Game, PLAYER_NAMES, PIONS_PER_PLAYER } from './core/rules.js';
 import { aiStep } from './core/ai.js';
-import { renderBoard, stackMarkup, pyramidMarkup, SYMBOLS } from './render/board.js';
+import { renderBoard, stackMarkup, pyramidMarkup, ghostPos, SYMBOLS } from './render/board.js';
 import { mountGameChrome } from '../../shared/chrome.js';
 import { createBattle } from './render/battle.js';
 import { Sounds } from './sounds.js';
@@ -11,6 +11,8 @@ const $ = (id) => document.getElementById(id);
 const sounds = new Sounds();
 const battle = createBattle($('battle'), sounds);
 let battling = false;
+let animating = false;
+const STEP_MS = 320;
 const EMBLEMS = ['/images/brame/seth.png', '/images/brame/horus.png'];
 const PIPS = { 1: [5], 2: [1, 9], 3: [1, 5, 9], 4: [1, 3, 7, 9], 5: [1, 3, 5, 7, 9], 6: [1, 3, 4, 6, 7, 9] };
 
@@ -71,7 +73,6 @@ function toolsHtml(p) {
 }
 
 function campHtml(p) {
-  const saved = game.saved[p];
   const pile = (n) => (n
     ? stackMarkup(p, n, 50, 118, { cap: PIONS_PER_PLAYER, badge: false, scale: 1 })
     : '<ellipse cx="50" cy="116" rx="26" ry="12" fill="none" stroke="#3a2813" stroke-dasharray="4 4" stroke-width="2"/>');
@@ -83,7 +84,6 @@ function campHtml(p) {
   return `<h2><img class="emblem" src="${EMBLEMS[p]}" alt="${PLAYER_NAMES[p]}" title="${PLAYER_NAMES[p]}" width="100" height="108" /></h2><p class="who">${label(p)}</p>
     <div class="piles">
       <div class="pile-box"><span>Camp</span>${reserve}<b>${game.reserve[p]}</b></div>
-      <div class="pile-box"><span>Sauvés</span><svg class="pile" viewBox="0 0 100 130" aria-hidden="true">${pile(saved)}</svg><b>${saved}</b></div>
     </div>
     <dl class="stats">
       <div><dt>Plateau</dt><dd>${game.pionsOnBoard(p)}</dd></div>
@@ -118,19 +118,21 @@ function render() {
     ui.lastKey = key;
   }
   if (game.phase === 'move' && ui.from && !game.destinations(ui.from, sum() || 0).length) ui.from = null;
-  renderBoard($('board'), game, { marks: marks(), selected: ui.from });
+  renderBoard($('board'), game, { marks: animating ? {} : marks(), selected: ui.from, moving: ui.moving });
   [0, 1].forEach((p) => {
     const el = $(`camp-${p}`);
     el.innerHTML = campHtml(p);
     el.classList.toggle('active', !game.over && game.current === p);
   });
   $('hint').textContent = hintText();
+  $('score-0').textContent = game.saved[0];
+  $('score-1').textContent = game.saved[1];
   schedule();
 }
 
 function schedule() {
   clearTimeout(timer);
-  if (game.over || battling || $('menu').hidden === false) return;
+  if (game.over || battling || animating || $('menu').hidden === false) return;
   if (game.phase === 'attack') timer = setTimeout(runBattle, 300);
   else if (!isHuman(game.current)) timer = setTimeout(() => aiStep(game), 850);
   else if (game.phase === 'pyramid' && game.pyramidOptions().length === 1) timer = setTimeout(() => game.pyramidStep(game.pyramidOptions()[0]), 650);
@@ -157,8 +159,40 @@ async function runBattle() {
   render();
 }
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function tween(a, b, owner, ms) {
+  return new Promise((resolve) => {
+    const t0 = performance.now();
+    const frame = (now) => {
+      const t = Math.min(1, (now - t0) / ms);
+      const e = t * t * (3 - 2 * t);
+      const ghost = document.getElementById('ghost');
+      if (ghost) ghost.innerHTML = stackMarkup(owner, 1, a.x + (b.x - a.x) * e, a.y + (b.y - a.y) * e + 4 - Math.sin(Math.PI * t) * 16, { badge: false });
+      if (t < 1) requestAnimationFrame(frame);
+      else resolve();
+    };
+    requestAnimationFrame(frame);
+  });
+}
+
+/** Le pion traverse le plateau case par case, au même rythme que la pyramide. */
+async function animateMove(m) {
+  const pts = m.path.map((id) => ghostPos(id, m.player, m.path));
+  for (let i = 1; i < pts.length; i++) {
+    await tween(pts[i - 1], pts[i], m.player, STEP_MS);
+    sounds.tick();
+  }
+  await sleep(250);
+  const ghost = document.getElementById('ghost');
+  if (ghost) ghost.innerHTML = '';
+  ui.moving = null;
+  animating = false;
+  render();
+}
+
 function onNode(id) {
-  if (!isHuman(game.current)) return;
+  if (!isHuman(game.current) || animating) return;
   const m = marks()[id];
   switch (game.phase) {
     case 'move':
@@ -182,7 +216,7 @@ function onNode(id) {
 
 function onClick(e) {
   const t = e.target.closest('[data-node],[data-die],[data-act],[data-pyr]');
-  if (!t || !isHuman(game.current)) return;
+  if (!t || !isHuman(game.current) || animating) return;
   if (t.dataset.node) return onNode(t.dataset.node);
   if (t.dataset.die !== undefined) {
     const i = +t.dataset.die;
@@ -232,10 +266,15 @@ function restore() {
 
 game.on('change', () => { render(); persist(); });
 game.on('log', (msg) => ui.logs.push(msg));
+game.on('moved', (m) => {
+  ui.moving = m;
+  animating = true;
+  animateMove(m);
+});
 game.on('saved', () => sounds.saved());
 game.on('crush', () => sounds.crunch());
 game.on('over', ({ winner, saved }) => {
-  const show = () => (battling ? setTimeout(show, 300) : setTimeout(() => {
+  const show = () => (battling || animating ? setTimeout(show, 300) : setTimeout(() => {
     sounds.win();
     $('final-title').textContent = winner === null ? 'Égalité !' : `${PLAYER_NAMES[winner]} gagne (${label(winner)}) !`;
     $('final-score').textContent = `Pions sauvés : Noir ${saved[0]} - Rouge ${saved[1]}.`;
