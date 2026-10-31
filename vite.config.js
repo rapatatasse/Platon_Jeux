@@ -17,6 +17,7 @@ const pages = {
   pirates: resolve(root, 'games/pirates/index.html'),
   inventeurs: resolve(root, 'games/inventeurs/index.html'),
   bomberhero: resolve(root, 'games/bomberhero/index.html'),
+  brame: resolve(root, 'games/brame/index.html'),
 };
 
 export default defineConfig({

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Brame : jeu de plateau égyptien en ligne | Platon Jeux</title>
+    <meta name="description" content="Brame, jeu de stratégie à 2 joueurs : dés, scarabées, attaques et pyramide. Joue en ligne contre un ami ou l'ordinateur." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!--GAME_SEO:brame-->
+    <!--GAME_JSONLD:brame-->
+  </head>
+  <body class="brame">
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+      <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="4" result="n" />
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="3.5" />
+      </filter>
+    </svg>
+
+    <main id="stage" class="stage">
+      <header class="bar">
+        <h1>Brame</h1>
+        <p id="hint" class="hint" role="status" aria-live="polite"></p>
+        <nav class="bar-actions">
+          <button id="btn-sound" type="button" class="btn btn-sand" aria-pressed="true">Son : oui</button>
+          <button id="btn-rules" type="button" class="btn btn-orange">Règles</button>
+          <button id="btn-new" type="button" class="btn btn-green">Nouvelle partie</button>
+        </nav>
+      </header>
+
+      <div class="table">
+        <aside id="camp-0" class="camp" aria-label="Camp noir"></aside>
+        <div class="board-wrap">
+          <svg id="board" viewBox="0 0 776 560" role="img" aria-label="Plateau de Brame : trois lignes de onze cases"></svg>
+        </div>
+        <aside id="camp-1" class="camp" aria-label="Camp rouge"></aside>
+      </div>
+
+      <section id="battle" class="overlay battle" role="dialog" aria-modal="true" aria-label="Bataille" hidden>
+        <div class="battle-stage">
+          <button type="button" class="bskip btn btn-sand">Accélérer »</button>
+          <h2 class="bt-title"></h2>
+          <div class="arena">
+            <div class="bside att">
+              <svg class="bstack" viewBox="0 0 160 200" aria-hidden="true"></svg>
+              <p class="bcount"></p><p class="bname"></p>
+              <div class="bdie" aria-hidden="true"></div><p class="bscore"></p>
+            </div>
+            <div class="vs">VS</div>
+            <div class="bside def">
+              <svg class="bstack" viewBox="0 0 160 200" aria-hidden="true"></svg>
+              <p class="bcount"></p><p class="bname"></p>
+              <div class="bdie" aria-hidden="true"></div><p class="bscore"></p>
+            </div>
+          </div>
+          <p class="bmsg" role="status" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section id="menu" class="overlay" aria-labelledby="menu-title">
+        <div class="panel sketch-box">
+          <p class="kicker">Platon Jeux</p>
+          <h2 id="menu-title">Brame</h2>
+          <p>Sauve plus de scarabées que ton adversaire en les faisant traverser le plateau, jusqu'au camp d'en face.</p>
+          <div class="actions">
+            <button id="start-ai" type="button" class="btn btn-main btn-green">Contre l'ordinateur</button>
+            <button id="start-2p" type="button" class="btn btn-main btn-gold">À 2 joueurs</button>
+          </div>
+          <p><button id="menu-rules" type="button" class="btn btn-orange">Lire les règles</button></p>
+        </div>
+      </section>
+
+      <section id="rules" class="overlay" role="dialog" aria-modal="true" aria-labelledby="rules-title" hidden>
+        <div class="panel sketch-box wide">
+          <h2 id="rules-title">Règles de Brame</h2>
+          <div class="lore">
+            <p>Brame a été créé par <strong>Jonathan Chaffanjon</strong>, avec l'aide précieuse de <strong>Johan Soulas</strong> pour l'équilibrage des règles. Présenté aux festivals de jeux de Parthenay, d'Ugine et de Cannes, il a été joué des centaines de fois : le résultat est un jeu à la technique novatrice, où la partie peut basculer à tout moment, aussi passionnant pour les joueurs avancés que pour les débutants.</p>
+            <figure class="salon">
+              <img src="/images/brame/salon.jpg" alt="Johan Soulas et Jonathan Chaffanjon en costumes égyptiens devant une pyramide Brame" width="260" height="322" />
+              <figcaption>Johan Soulas et Jonathan Chaffanjon pendant le salon du jeu de Parthenay, en 2014.</figcaption>
+            </figure>
+            <h3>Préambule</h3>
+            <p>Seth, le dieu maléfique de la mythologie égyptienne, tua son frère Osiris pour s'emparer de la moitié du royaume qui lui revenait. Osiris, ramené à la vie le temps d'une union, permit à Isis de donner naissance à Horus.</p>
+            <p>À l'abri de Seth, Horus grandit en préparant la vengeance de son père. Une fois venu l'âge de se battre, il réclama ce qui lui revenait de droit : le trône d'Égypte. Il affronta son oncle Seth, le vainquit et reçut le trône en héritage. Mais Seth ne cessa de le remettre en difficulté, et un long procès ainsi que de nombreux défis s'ensuivirent.</p>
+            <p>C'est de cette lutte que naquit le jeu Brame. Les divinités décidèrent qu'elle se déroulerait sur terre, afin que le royaume des cieux retrouve la tranquillité, et firent don de ce jeu aux humains. Ainsi, Horus et Seth peuvent choisir d'influencer le tirage des dés. À chaque partie, le sort du royaume des divinités est en jeu. Serez-vous capable d'appréhender la stratégie divine ?</p>
+            <p>Pour gagner, il faudra utiliser et déjouer toutes les techniques classiques des champs de bataille : <em>attaquez, bloquez, fuyez, encerclez, affaiblissez, courez, sacrifiez, anticipez, programmez</em>. Et dans le jeu à 3, créez des alliances et trahissez au bon moment.</p>
+            <p><em>Les perdants espèrent, les vainqueurs calculent.</em></p>
+          </div>
+          <h3>Règles</h3>
+          <p><a href="https://youtu.be/roDlV5SfQgo?si=btfNxo6fWwV7KL4L" target="_blank" rel="noopener">Voir la vidéo d'explication des règles</a></p>
+          <ul class="rules-list">
+            <li><strong>But :</strong> sauver le plus de pions. Les pions attendent hors du plateau, dans ton camp, et entrent par ta rangée de départ. Un pion est sauvé quand il <em>sort du plateau</em> côté adverse, en faisant exactement le nombre de pas du dé. La partie s'arrête dès qu'un joueur n'a plus de pions à jouer ; les pions encore sur le plateau sont perdus.</li>
+            <li><strong>Début de tour :</strong> lance les 3 dés <em>ou</em> déclare une attaque.</li>
+            <li><strong>Déplacement :</strong> chaque dé (ou la somme de plusieurs dés) fait avancer un pion d'exactement ce nombre de cases, dans toutes les directions, retours possibles. Impossible de sauter un pion adverse ou une pyramide ; tu peux traverser les tiens.</li>
+            <li><strong>Attaque :</strong> contre un bataillon voisin (même case voisine ou passage). Chacun lance un dé et ajoute son nombre de pions ; le plus petit total perd un pion, l'égalité donne la victoire au défenseur. On recommence jusqu'à l'élimination d'un bataillon, puis le vainqueur occupe la case. L'attaquant victorieux peut attaquer une seconde fois avec le même bataillon.</li>
+            <li><strong>Double :</strong> la pyramide avance (dé pyramide) et un seul pion avance de la valeur du dé restant.</li>
+            <li><strong>Triple :</strong> deux lancers du dé pyramide (tu choisis), un pion adverse au choix est supprimé et un pion avance de la valeur d'un dé.</li>
+            <li><strong>Pyramide :</strong> elle ne fait qu'avancer, écrase tous les pions (amis et ennemis) sur sa route et renvoie la pyramide adverse dans son camp. Arrivée dans le camp adverse, elle retourne à sa base et ne reviendra qu'au prochain double ou triple.</li>
+          </ul>
+          <p><button id="rules-close" type="button" class="btn btn-main btn-green">Compris</button></p>
+        </div>
+      </section>
+
+      <section id="final" class="overlay" aria-labelledby="final-title" hidden>
+        <div class="panel sketch-box">
+          <p class="kicker">Fin de partie</p>
+          <h2 id="final-title"></h2>
+          <p id="final-score"></p>
+          <div class="actions">
+            <button id="btn-again" type="button" class="btn btn-main btn-green">Rejouer</button>
+            <button id="btn-menu" type="button" class="btn">Menu</button>
+            <a class="btn" href="/">Carte stellaire</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <section class="seo-content" aria-labelledby="brame-seo-title">
+      <h1 id="brame-seo-title">Brame : jeu de plateau égyptien à 2 joueurs</h1>
+      <p>Brame est un jeu de stratégie et de dés créé par Jonathan Chaffanjon. Chaque joueur dispose de 15 scarabées à faire traverser le plateau, d'une pyramide qui écrase tout sur son passage et de la possibilité d'attaquer le bataillon adverse.</p>
+      <p>Le jeu physique est vendu 19 € TTC, frais d'envoi inclus : voir la page d'accueil de Platon Jeux.</p>
+      <nav aria-label="Découvrir les autres jeux"><a href="/">Voir le catalogue des jeux éducatifs Platon</a></nav>
+    </section>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

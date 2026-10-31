@@ -107,3 +107,13 @@ html { scroll-behavior: smooth; }
 .stage.modal-open .platon { display: none; }
 
 .pad-focus { outline: 3px solid var(--rust); outline-offset: 3px; }
+
+.brame-photos { display: flex; gap: 16px; justify-content: center; align-items: flex-start; flex-wrap: wrap; margin-bottom: 14px; }
+.brame-photos figure { margin: 0; flex: 1 1 260px; max-width: 420px; }
+.brame-photos img { display: block; width: 100%; height: auto; border: 3px solid var(--ink); border-radius: 6px; box-shadow: 3px 4px 0 rgba(58, 40, 19, 0.35); }
+.brame-price { font-size: 34px; color: var(--rust); }
+.brame-shop .btn { margin: 6px 6px 0; }
+.brame-salon { margin: 6px auto 14px; max-width: 320px; }
+.brame-salon img { display: block; width: 100%; height: auto; border: 3px solid var(--ink); border-radius: 6px; box-shadow: 3px 4px 0 rgba(58, 40, 19, 0.35); }
+.brame-salon figcaption { margin-top: 6px; font-size: 20px; color: var(--ink-soft); }
+.brame-sign { font-size: 26px; font-style: italic; text-align: right; margin-bottom: 8px; }
