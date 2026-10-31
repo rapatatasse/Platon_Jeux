@@ -7,6 +7,7 @@ import { Guide } from './ui/Guide.js';
 import { OrbitModal } from './ui/OrbitModal.js';
 import { HubSounds } from './HubSounds.js';
 import { Keyboard } from '../shared/Keyboard.js';
+import { GamepadInput, bindPadMenus } from '../shared/Gamepad.js';
 import { Music } from '../shared/Music.js';
 import { loadTextures } from '../shared/loadTextures.js';
 import { startLoop } from '../shared/loop.js';
@@ -24,7 +25,7 @@ async function boot() {
     Promise.all(['30px "IM Fell English"', '26px Caveat'].map((f) => document.fonts.load(f))),
     new Promise((r) => setTimeout(r, 2500)),
   ]);
-  const [shipTexture] = await loadTextures([`${BASE}images/vaisseau.png`]);
+  const [shipTexture] = await loadTextures([`${BASE}images/vaisseau_vue_haut.png`]);
 
   const startAt = sessionStorage.getItem('platon.from');
   sessionStorage.removeItem('platon.from');
@@ -42,6 +43,11 @@ async function boot() {
     onAction: (action) => { if (action === 'uturn' && !modal.isOpen) game.uturn(); },
   });
   keys.onPress('ArrowDown', () => !modal.isOpen && game.uturn());
+
+  // manette : stick / croix = direction visée, A = tirer, B = demi-tour
+  const pad = new GamepadInput();
+  bindPadMenus(pad, [{ selector: '#orbit-modal' }], { isOpen: (el) => !el.hidden });
+  pad.on('b', () => !modal.isOpen && game.uturn());
   stage.classList.add('ready');
 
   // son
@@ -85,12 +91,13 @@ async function boot() {
   let acc = 0;
   let welcomed = false;
   startLoop((dt) => {
+    pad.poll();
     if (!visible) return;
     if (modal.isOpen) { view.update(0); return; }
     const turn = (keys.isDown('ArrowLeft') || touchInput.has('left') ? 1 : 0)
       - (keys.isDown('ArrowRight') || touchInput.has('right') ? 1 : 0);
     game.setInput(turn, keys.isDown('ArrowUp') || touchInput.has('up') ? 1 : 0,
-      keys.isDown('Space') || touchInput.has('fire'));
+      keys.isDown('Space') || touchInput.has('fire') || pad.held('a'), pad.aim());
     acc += dt;
     while (acc >= STEP) { game.update(STEP); acc -= STEP; }
     view.update(dt);

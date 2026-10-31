@@ -16,6 +16,7 @@ import { loadTextures } from '../../shared/loadTextures.js';
 import { canvasTexture } from '../../shared/canvasTexture.js';
 import { startLoop } from '../../shared/loop.js';
 import { Keyboard } from '../../shared/Keyboard.js';
+import { GamepadInput, bindPadMenus } from '../../shared/Gamepad.js';
 import { mountGameChrome } from '../../shared/chrome.js';
 import { bindTouchControls } from '../../shared/TouchControls.js';
 
@@ -39,7 +40,7 @@ let playerGlow     = null;
 let bonusSeconds   = 0;  // secondes supplémentaires gagnables sur les îles
 let maxHealthBonus = 0;  // coeurs supplémentaires gagnables sur les îles
 
-const input = { forward: false, backward: false, left: false, right: false };
+const input = { forward: false, backward: false, left: false, right: false, aim: null };
 const touchInput = new Set();
 
 // ── Point d'entrée ───────────────────────────────────────────
@@ -322,6 +323,16 @@ function _initSystems() {
 
 // ── Contrôles (clavier partagé + manette) ────────────────────
 const keys = new Keyboard();
+const pad = new GamepadInput({ deadzone: CONFIG.GAMEPAD_DEADZONE });
+bindPadMenus(pad, [
+    { selector: '#battle-modal', columns: 3 },
+    { selector: '#reward-modal' },
+    { selector: '#game-over' },
+    { selector: '#pause-overlay' },
+]);
+pad.on('start', () => { if (batailleSystem.active) batailleSystem._submit(); else _togglePause(); });
+pad.on('b', () => batailleSystem.pressKey('backspace'));
+pad.on('x', () => batailleSystem.pressKey('clear'));
 
 function _bindInput() {
     keys.onPress('Escape', _togglePause);
@@ -339,20 +350,14 @@ function _readInput() {
 }
 
 function _readGamepad() {
-    const gp = navigator.getGamepads?.()[0];
-    if (!gp) return;
-    const dz = CONFIG.GAMEPAD_DEADZONE;
-    const ax = gp.axes[0] || 0;
-    const ay = gp.axes[1] || 0;
-    const btn = i => gp.buttons[i]?.pressed;
-    input.left     ||= ax < -dz || btn(14);
-    input.right    ||= ax >  dz || btn(15);
-    input.forward  ||= ay < -dz || btn(12);
-    input.backward ||= ay >  dz || btn(13);
+    // cap : 0 = nord (haut de l'écran), sens horaire ; angle manette : 0 = droite, sens anti-horaire
+    const aim = pad.aim();
+    input.aim = aim === null ? null : Math.PI / 2 - aim;
 }
 
 // ── Boucle principale ────────────────────────────────────────
 function _loop(now) {
+    pad.poll();
     const delta = Math.min(now - lastTime, 100);
     lastTime = now;
 
@@ -663,6 +668,7 @@ function restartGame() {
     inBattle    = false;
     gamePhase   = 1;
     input.forward = input.backward = input.left = input.right = false;
+    input.aim = null;
 
     // Désactiver mode nuit
     renderer.setClearColor(0x000000, 1);

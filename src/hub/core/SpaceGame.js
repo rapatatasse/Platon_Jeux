@@ -51,7 +51,7 @@ export class SpaceGame {
     this.score = 0;
     this.state = 'takeoff';       // takeoff | flying | respawn | launching
     this.stateTime = 0;
-    this.input = { turn: 0, thrust: 0, fire: false };
+    this.input = { turn: 0, thrust: 0, fire: false, aim: null };
     this.ship = { x: HOME.x, y: HOME.y, vx: 0, vy: 0, dir: Math.PI / 2, hp: CFG.ship.maxHp, invuln: 0, sinceHit: 99, regenTimer: 0, fireCd: 0, turnLeft: 0 };
     this.bullets = [];            // balles du joueur
     this.enemyBullets = [];
@@ -104,8 +104,8 @@ export class SpaceGame {
   }
 
   /** turn : +1 gauche (anti-horaire), -1 droite ; thrust : 1 = avancer. */
-  setInput(turn, thrust, fire) {
-    this.input.turn = turn; this.input.thrust = thrust; this.input.fire = !!fire;
+  setInput(turn, thrust, fire, aim = null) {
+    this.input.turn = turn; this.input.thrust = thrust; this.input.fire = !!fire; this.input.aim = aim;
   }
 
   /** Demi-tour rapide (flèche bas). */

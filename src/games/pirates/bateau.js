@@ -3,6 +3,7 @@
 // ============================================================
 import * as THREE from 'three';
 import { CONFIG } from './config.js';
+import { angleDiff } from '../../shared/ShipPhysics.js';
 
 export class PlayerBoat {
     constructor(scene, textures) {
@@ -38,14 +39,21 @@ export class PlayerBoat {
     update(input, delta) {
         const dt = Math.min(delta, 50) / 16.67; // normalisé 60fps
 
-        // Rotation
-        if (input.left)  this.heading -= CONFIG.PLAYER_ROTATION_SPEED * dt;
-        if (input.right) this.heading += CONFIG.PLAYER_ROTATION_SPEED * dt;
-
-        // Translation
         let spd = 0;
-        if (input.forward)  spd =  CONFIG.PLAYER_SPEED;
-        if (input.backward) spd = -CONFIG.PLAYER_REVERSE_SPEED;
+        if (input.aim !== null && input.aim !== undefined) {
+            // Manette : le stick / la croix donne la direction voulue (haut = nord, droite = est…)
+            const diff = angleDiff(input.aim, this.heading);
+            this.heading += Math.sign(diff) * Math.min(Math.abs(diff), CONFIG.PLAYER_ROTATION_SPEED * CONFIG.PLAYER_AIM_TURN_MULT * dt);
+            if (Math.abs(angleDiff(input.aim, this.heading)) < 1.2) spd = CONFIG.PLAYER_SPEED;
+        } else {
+            // Rotation
+            if (input.left)  this.heading -= CONFIG.PLAYER_ROTATION_SPEED * dt;
+            if (input.right) this.heading += CONFIG.PLAYER_ROTATION_SPEED * dt;
+
+            // Translation
+            if (input.forward)  spd =  CONFIG.PLAYER_SPEED;
+            if (input.backward) spd = -CONFIG.PLAYER_REVERSE_SPEED;
+        }
 
         const dx = Math.sin(this.heading) * spd * dt;
         const dz = -Math.cos(this.heading) * spd * dt;

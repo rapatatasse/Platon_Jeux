@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { angleDiff } from '../../shared/ShipPhysics.js';
 import { createRenderer } from '../../shared/createRenderer.js';
 import { canvasTexture } from '../../shared/canvasTexture.js';
 import { WORLD, HOME } from '../core/SpaceGame.js';
@@ -84,7 +85,6 @@ export class SpaceView {
     this.shipW = 96;
     this.ship = sprite(texture, this.shipW, this.shipW * this.shipAspect, Z.ship);
     this.shipAngle = Math.PI / 2;
-    this.shipFlip = false;
     this.scene.add(this.ship);
   }
 
@@ -169,16 +169,11 @@ export class SpaceView {
     const g = this.game, s = g.ship;
 
     // vaisseau : face à sa direction (retourné quand il va vers la gauche)
-    const flip = Math.cos(s.dir) < 0;
-    const target = flip ? s.dir - Math.PI : s.dir;
-    if (flip !== this.shipFlip) { this.shipFlip = flip; this.shipAngle = target; }
-    let d = target - this.shipAngle;
-    d = ((d + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
-    this.shipAngle += d * Math.min(1, dt * 10);
+    this.shipAngle += angleDiff(s.dir, this.shipAngle) * Math.min(1, dt * 14);
     const sc = 0.45 + 0.55 * g.takeoffProgress;
     this.ship.position.set(s.x, s.y, Z.ship);
     this.ship.rotation.z = this.shipAngle;
-    this.ship.scale.set((flip ? -1 : 1) * this.shipW * sc, this.shipW * sc * this.shipAspect, 1);
+    this.ship.scale.set(this.shipW * sc, this.shipW * sc * this.shipAspect, 1);
     this.ship.visible = g.state !== 'respawn';
     this.ship.material.opacity = s.invuln > 0 ? 0.45 + 0.4 * Math.abs(Math.sin(this.time * 18)) : 1;
     if (g.state === 'flying' && g.input.fire === false && g.input.thrust > 0 && Math.floor(this.time * 30) % 2 === 0) {

@@ -1,9 +1,15 @@
 /**
  * Déplacement du vaisseau, commun au hub et aux jeux de la plateforme (sans Three.js ni DOM).
  * Repère : x vers la droite, y vers le HAUT, dir en radians (0 = vers la droite, sens anti-horaire).
- * Commandes : turn = +1 gauche / -1 droite ; thrust = 1 avance dans la direction du nez ; uturn() = demi-tour rapide.
+ * Commandes : turn = +1 gauche / -1 droite ; thrust = 1 avance dans la direction du nez ; uturn() = demi-tour rapide ;
+ * aim = angle voulu (stick / croix de manette) : le vaisseau pivote vite vers cette direction absolue et avance.
  */
 export const DEFAULT_SHIP = { radius: 22, turnSpeed: 3.4, uturnSpeed: 9, accel: 720, maxSpeed: 340, drag: 1.7 };
+
+/** Plus court écart signé entre deux angles (radians), dans ]-π, π]. */
+export function angleDiff(to, from) {
+  return ((to - from + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
+}
 
 export function createShipState(x = 0, y = 0, dir = Math.PI / 2) {
   return { x, y, vx: 0, vy: 0, dir, turnLeft: 0 };
@@ -14,8 +20,12 @@ export function startUTurn(ship) {
 }
 
 /** Avance le vaisseau de dt secondes. `bounds` = { halfW, halfH } (rebond amorti sur les bords). */
-export function stepShip(ship, { turn = 0, thrust = 0 }, dt, params = DEFAULT_SHIP, bounds = null) {
-  if (ship.turnLeft > 0) {
+export function stepShip(ship, { turn = 0, thrust = 0, aim = null }, dt, params = DEFAULT_SHIP, bounds = null) {
+  if (aim !== null && aim !== undefined && ship.turnLeft <= 0) {
+    const diff = angleDiff(aim, ship.dir);
+    ship.dir += Math.sign(diff) * Math.min(Math.abs(diff), params.uturnSpeed * dt);
+    thrust = Math.abs(angleDiff(aim, ship.dir)) < 1.2 ? 1 : 0;
+  } else if (ship.turnLeft > 0) {
     const step = Math.min(ship.turnLeft, params.uturnSpeed * dt);
     ship.dir += step; ship.turnLeft -= step;
   } else {

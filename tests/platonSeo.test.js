@@ -12,7 +12,7 @@ test('le hub reçoit une canonique absolue et un catalogue VideoGame complet', (
 
   assert.match(html, /<link rel="canonical" href="https:\/\/jeux\.example\/"/);
   assert.match(html, /name="twitter:image"/);
-  assert.equal(list.itemListElement.length, 3);
+  assert.equal(list.itemListElement.length, 4);
   assert.equal(list.itemListElement[0].item.url, 'https://jeux.example/games/pixel/');
   assert.equal(list.itemListElement[0].item.offers.price, 0);
   assert.ok(list.itemListElement[0].item.image);

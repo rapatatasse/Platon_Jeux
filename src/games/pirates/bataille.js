@@ -36,18 +36,35 @@ export class BatailleSystem {
 
         // Soumission
         this.submitBtn.addEventListener('click', () => this._submit());
-        this.inputEl.addEventListener('keydown', e => {
-            if (e.key === 'Enter') this._submit();
+        // La réponse n'est pas un <input> : sur mobile/tablette aucun clavier système ne vient cacher le jeu.
+        // Saisie : pavé à l'écran, clavier physique, manette.
+        this.value = '';
+        window.addEventListener('keydown', e => {
+            if (!this.active) return;
+            if (/^d$/.test(e.key)) this.pressKey(e.key);
+            else if (e.key === 'Backspace') this.pressKey('backspace');
+            else if (e.key === 'Delete' || e.key === 'Escape') this.pressKey('clear');
+            else if (e.key === 'Enter') this._submit();
+            else return;
+            e.preventDefault();
         });
         this.keypad?.addEventListener('click', e => {
             const button = e.target.closest('[data-key]');
-            if (!button) return;
-            const key = button.dataset.key;
-            if (key === 'clear') this.inputEl.value = '';
-            else if (key === 'backspace') this.inputEl.value = this.inputEl.value.slice(0, -1);
-            else if (this.inputEl.value.length < 4) this.inputEl.value += key;
-            this.inputEl.focus();
+            if (button) this.pressKey(button.dataset.key);
         });
+    }
+
+    /** Touche du pavé : un chiffre, 'backspace' ou 'clear'. */
+    pressKey(key) {
+        if (!this.active) return;
+        if (key === 'clear') this._setValue('');
+        else if (key === 'backspace') this._setValue(this.value.slice(0, -1));
+        else if (this.value.length < 4) this._setValue(this.value + key);
+    }
+
+    _setValue(v) {
+        this.value = v;
+        this.inputEl.textContent = v;
     }
 
     // ── Bataille ennemie (multiplication) ─────────────────
@@ -102,14 +119,13 @@ export class BatailleSystem {
         this._onWin  = onWin;
         this._onLose = onLose;
 
-        this.inputEl.value          = '';
+        this._setValue('');
         this._timeLeft              = CONFIG.BATTLE_TIME + this.bonusSeconds;
         this.timerValEl.textContent = this._timeLeft;
         this.timerValEl.style.color = '#ff8c55';
         this.timerBar.style.width   = '100%';
 
         this.modal.classList.add('active');
-        setTimeout(() => this.inputEl.focus(), 80);
         this._timerIntvl = setInterval(() => this._tick(), 1000);
     }
 
@@ -131,8 +147,8 @@ export class BatailleSystem {
     // ── Soumission de la réponse ───────────────────────────
     _submit() {
         if (!this.active) return;
-        const answer = parseInt(this.inputEl.value, 10);
-        if (isNaN(answer)) { this.inputEl.focus(); return; }
+        const answer = parseInt(this.value, 10);
+        if (isNaN(answer)) return;
         // Code triche : 999 → passer en Phase 2
         if (answer === 999 && this.onCheat) {
             clearInterval(this._timerIntvl);

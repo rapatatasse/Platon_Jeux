@@ -7,6 +7,7 @@ import { GEO, MAP_SIZE } from './worldGeo.js';
 import { MapView } from './render/MapView.js';
 import { Sounds } from './sounds.js';
 import { Keyboard } from '../../shared/Keyboard.js';
+import { GamepadInput } from '../../shared/Gamepad.js';
 import { Music } from '../../shared/Music.js';
 import { loadTextures } from '../../shared/loadTextures.js';
 import { startLoop } from '../../shared/loop.js';
@@ -118,6 +119,19 @@ async function boot() {
   $('btn-replay').addEventListener('click', () => location.reload());
   const choose = (i) => { if (game.state === 'choosing') { sounds.select(); game.choose(i); } };
   keys.onPress('Enter', () => { startGame(); continueGame(); });
+
+  // ── manette : stick / croix = direction visée, A ou Start pour valider, A B X Y LB pour choisir un pays, B = demi-tour
+  const pad = new GamepadInput();
+  const confirm = () => {
+    startGame(); continueGame();
+    if (!$('end').hidden) ($('btn-next').hidden ? $('btn-replay') : $('btn-next')).click();
+  };
+  pad.on('start', confirm);
+  ['a', 'b', 'x', 'y', 'lb'].forEach((name, i) => pad.on(name, () => {
+    if (i < LEVEL.choicesPerRound && game.state === 'choosing') choose(i);
+    else if (name === 'a') confirm();
+    else if (name === 'b' && game.state === 'flying') game.uturn();
+  }));
   for (let i = 0; i < LEVEL.choicesPerRound; i++) {
     keys.onPress(`Digit${i + 1}`, () => choose(i));
     keys.onPress(`Numpad${i + 1}`, () => choose(i));
@@ -199,12 +213,14 @@ async function boot() {
   let lastSecond = -1;
   let needleDeg = 0, needleGoal = 0, needleTimer = 0;   // aiguille affolée (niveau 2)
   startLoop((dt) => {
+    pad.poll();
     const flying = game.state === 'flying';
     const turn = (keys.isDown('ArrowLeft') || touchInput.has('left') ? 1 : 0)
       - (keys.isDown('ArrowRight') || touchInput.has('right') ? 1 : 0);
     const thrust = keys.isDown('ArrowUp') || touchInput.has('up') ? 1 : 0;
-    game.update(dt, { turn, thrust });
-    view.update(dt, flying && thrust > 0);
+    const aim = pad.aim();
+    game.update(dt, { turn, thrust, aim });
+    view.update(dt, flying && (thrust > 0 || aim !== null));
 
     $('timer').textContent = mmss(game.timeLeft);
     $('timer').classList.toggle('low', game.timeLeft <= 30);

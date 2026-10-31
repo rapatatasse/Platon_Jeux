@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
 import platonSeo from './vite-plugins/platonSeo.js';
+import bomberHeroes from './vite-plugins/bomberHeroes.js';
 
 const root = resolve(import.meta.dirname, 'src');
 
@@ -15,12 +16,13 @@ const pages = {
   pixelAide: resolve(root, 'games/pixel/aide/index.html'),
   pirates: resolve(root, 'games/pirates/index.html'),
   inventeurs: resolve(root, 'games/inventeurs/index.html'),
+  bomberhero: resolve(root, 'games/bomberhero/index.html'),
 };
 
 export default defineConfig({
   root,
   base: '/',
-  plugins: [platonSeo()],
+  plugins: [platonSeo(), bomberHeroes({ dir: resolve(import.meta.dirname, 'public/images/bomberheroes') })],
   publicDir: resolve(import.meta.dirname, 'public'),
   build: {
     outDir: resolve(import.meta.dirname, 'dist'),

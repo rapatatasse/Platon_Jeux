@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bomber Hero : bataille de magiciens à 4 joueurs | Platon Jeux</title>
+    <meta name="description" content="Bomber Hero : un jeu de bombes façon Bomberman dans un château, jusqu’à 4 joueurs au clavier ou à la manette, avec coffres et pouvoirs magiques." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!--GAME_SEO:bomberhero-->
+    <!--GAME_JSONLD:bomberhero-->
+  </head>
+  <body class="bomber">
+    <main id="stage" class="stage">
+      <header id="hud" class="hud" hidden>
+        <button id="btn-hud-menu" class="hud-menu" type="button" title="Revenir au menu du jeu">&larr; Menu</button>
+        <div id="cards" class="cards"></div>
+        <div class="clock"><span id="round-v" class="round"></span><strong id="timer">0:00</strong></div>
+      </header>
+      <div class="arena-wrap"><canvas id="arena" aria-label="Arène du château"></canvas></div>
+      <p id="banner" class="banner" hidden></p>
+      <p id="count" class="count" hidden aria-live="assertive"></p>
+      <button id="sound" class="sound" type="button"></button>
+
+      <section id="menu" class="overlay" aria-labelledby="menu-title">
+        <div class="panel">
+          <p class="kicker">Platon Jeux</p>
+          <h2 id="menu-title">Bomber Hero</h2>
+          <p class="lead">Brise les murs du château à coups de sortilèges, ouvre les coffres et reste le dernier magicien debout.</p>
+          <div class="field roster">
+            <div><span class="label">Joueurs humains</span><div id="human-choice" class="choice" role="radiogroup" aria-label="Nombre de joueurs humains"></div></div>
+            <div><span class="label">Robots</span><div id="bot-choice" class="choice" role="radiogroup" aria-label="Nombre de robots"></div></div>
+          </div>
+          <div class="field">
+            <span class="label">Carte</span>
+            <div id="map-choice" class="choice maps" role="radiogroup" aria-label="Carte"></div>
+          </div>
+          <div id="level-field" class="field" hidden>
+            <span class="label">Difficulté des robots</span>
+            <div id="level-choice" class="choice" role="radiogroup" aria-label="Difficulté des robots"></div>
+          </div>
+          <div id="controls" class="controls-grid"></div>
+          <p id="pads" class="pads"></p>
+          <ul id="legend" class="legend" aria-label="Pouvoirs magiques"></ul>
+          <div class="actions"><button id="btn-start" type="button" class="btn primary">Entrer dans l’arène</button></div>
+          <p class="hint">Touches 1 à 4 pour le nombre d’humains &nbsp;·&nbsp; 4 participants maximum</p>
+        </div>
+      </section>
+
+      <section id="pause" class="overlay" aria-labelledby="pause-title" hidden>
+        <div class="panel small">
+          <h2 id="pause-title">Pause</h2>
+          <div class="actions">
+            <button id="btn-resume" type="button" class="btn primary">Reprendre</button>
+            <button id="btn-quit" type="button" class="btn">Abandonner</button>
+          </div>
+          <p class="hint">Échap pour reprendre</p>
+        </div>
+      </section>
+
+      <section id="final" class="overlay" aria-labelledby="final-title" hidden>
+        <div class="panel small">
+          <p class="kicker">Victoire</p>
+          <img id="final-hero" class="final-hero" alt="" />
+          <h2 id="final-title"></h2>
+          <p id="final-score" class="lead"></p>
+          <div class="actions">
+            <button id="btn-again" type="button" class="btn primary">Rejouer</button>
+            <button id="btn-menu" type="button" class="btn">Changer de joueurs</button>
+            <a class="btn" href="/">Carte stellaire</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <section class="seo-content" aria-labelledby="bomberhero-seo-title">
+      <h1 id="bomberhero-seo-title">Bomber Hero : jeu de bombes à 4 joueurs dans un château</h1>
+      <p>Lance des sorts pour ouvrir les murs de pierre du château, récupère les bonus et fais exploser tes adversaires. Le dernier magicien en vie remporte la manche ; la première à trois manches gagne la partie.</p>
+      <h2>Coffres et pouvoirs magiques</h2>
+      <p>Les coffres cachent un pouvoir à usage unique : flamme (mur de feu), glace pour figer un adversaire, poussée pour repousser une bombe, rayon qui brise tout en ligne, ralentisseur et rapidité.</p>
+      <h2>Comment jouer ?</h2>
+      <p>De 2 à 4 joueurs sur le même écran, au clavier ou avec des manettes. Joueur 1 : flèches, point pour la bombe et 3 pour le pouvoir. Joueur 2 : Z Q S D, A et E.</p>
+      <nav aria-label="Découvrir les autres jeux">
+        <h2>Explorer les autres jeux</h2>
+        <ul>
+          <li><a href="/games/pixel/">PIXEL : apprendre le JavaScript avec des fonctions et des boucles</a></li>
+          <li><a href="/games/pirates/">Pirates des Tables : s’entraîner aux multiplications</a></li>
+          <li><a href="/">Voir le catalogue des jeux éducatifs Platon</a></li>
+        </ul>
+      </nav>
+    </section>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

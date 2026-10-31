@@ -10,6 +10,7 @@ export const CONFIG = {
     PLAYER_SPEED:          0.14,   // unités / frame à 60fps
     PLAYER_REVERSE_SPEED:  0.07,
     PLAYER_ROTATION_SPEED: 0.038,  // radians / frame
+    PLAYER_AIM_TURN_MULT:  4,      // pivot plus rapide quand on vise une direction au stick / à la croix
 
     // ── Caméra ──
     CAMERA_VIEW_SIZE:  18,   // demi-hauteur en unités monde (zoom)

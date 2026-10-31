@@ -124,11 +124,12 @@ body { overflow-x: hidden; min-height: 100vh; background: #050f1a; font-family: 
 .timer-bar-wrap { background: rgba(255,255,255,0.1); border-radius: 5px; height: 9px; margin-bottom: 24px; overflow: hidden; }
 #timer-bar { height: 100%; background: linear-gradient(90deg, #ff4444, #ff6b35, #ffd700); border-radius: 5px; transition: width 0.15s linear; width: 100%; }
 #battle-input {
-    width: 160px; padding: 13px; font-size: 30px; text-align: center;
-    background: rgba(255,255,255,0.08); border: 2px solid #4ec9b0;
-    border-radius: 8px; color: #fff; outline: none;
+    width: 160px; min-height: 66px; margin: 0 auto; padding: 13px; font-size: 30px; line-height: 1.2; text-align: center;
+    background: rgba(255,215,0,0.08); border: 2px solid #ffd700;
+    border-radius: 8px; color: #fff; user-select: none; -webkit-user-select: none;
 }
-#battle-input:focus { border-color: #ffd700; background: rgba(255,215,0,0.08); }
+#battle-input:empty::before { content: '?'; opacity: 0.4; }
+.pad-focus { outline: 3px solid #ffd700; outline-offset: 2px; }
 .numeric-keypad { width: 210px; margin: 12px auto 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .numeric-keypad button { min-height: 42px; border: 1px solid #4ec9b0; border-radius: 7px; background: rgba(78,201,176,0.12); color: #e8d5a3; font: 22px Georgia, serif; cursor: pointer; touch-action: manipulation; }
 .numeric-keypad button:active { background: #2a9d8f; color: #fff; transform: scale(0.96); }

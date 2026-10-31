@@ -83,7 +83,7 @@
             <div class="battle-question" id="battle-question">? × ? = ?</div>
             <div id="battle-timer">⏱ <span id="timer-value">10</span>s</div>
             <div class="timer-bar-wrap"><div id="timer-bar"></div></div>
-            <input type="number" id="battle-input" placeholder="?" min="0" max="9999" autocomplete="off" inputmode="numeric">
+            <div id="battle-input" role="textbox" aria-label="Ta réponse" aria-live="polite"></div>
             <div id="numeric-keypad" class="numeric-keypad" aria-label="Clavier numérique">
                 <button type="button" data-key="1">1</button><button type="button" data-key="2">2</button><button type="button" data-key="3">3</button>
                 <button type="button" data-key="4">4</button><button type="button" data-key="5">5</button><button type="button" data-key="6">6</button>
@@ -91,7 +91,7 @@
                 <button type="button" data-key="clear">C</button><button type="button" data-key="0">0</button><button type="button" data-key="backspace">⌫</button>
             </div>
             <button id="battle-submit">⚓ Attaquer !</button>
-            <div class="battle-hint">Appuyez sur Entrée pour valider</div>
+            <div class="battle-hint">Tape ta réponse avec les touches, puis valide (Entrée)</div>
             <div id="battle-outcome"></div>
         </div>
     </div>

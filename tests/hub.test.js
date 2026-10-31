@@ -184,3 +184,20 @@ test('un tir du joueur détruit un ennemi en 2 coups', () => {
   assert.equal(killed.length, 1);
   assert.equal(g.score, CFG.points.enemy);
 });
+
+import { createShipState, stepShip, angleDiff, DEFAULT_SHIP } from '../src/shared/ShipPhysics.js';
+
+test('vaisseau : le stick vise une direction absolue (droite, haut, gauche, bas)', () => {
+  for (const [aim, vx, vy] of [[0, 1, 0], [Math.PI / 2, 0, 1], [Math.PI, -1, 0], [-Math.PI / 2, 0, -1]]) {
+    const ship = createShipState(0, 0, Math.PI / 2);
+    for (let i = 0; i < 120; i++) stepShip(ship, { aim }, 1 / 60);
+    assert.ok(Math.abs(angleDiff(aim, ship.dir)) < 0.05, `nez vers ${aim}`);
+    assert.ok(ship.x * vx + ship.y * vy > 20, `avance vers ${aim}`);
+  }
+});
+
+test('vaisseau : sans stick (aim = null) les commandes tourner / avancer restent inchangées', () => {
+  const ship = createShipState(0, 0, 0);
+  stepShip(ship, { turn: 1, thrust: 1, aim: null }, 0.1, DEFAULT_SHIP);
+  assert.ok(ship.dir > 0 && ship.vx > 0);
+});
