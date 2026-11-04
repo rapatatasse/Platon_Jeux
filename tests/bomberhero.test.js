@@ -142,8 +142,8 @@ test('pouvoir rayon : brise le premier bloc et tue en ligne', () => {
   g.players[1].x = g.players[1].tx = 4; g.players[1].y = g.players[1].ty = 1;
   g.players[0].power = 'ray';
   g.usePower(0);
-  g.update(0.016);
   assert.equal(g.cell(6, 1), FLOOR);
+  run(g, 0.5);
   assert.equal(g.players[1].alive, false);
 });
 
@@ -596,4 +596,91 @@ test('aventure : les gardiens dorment jusqu\'à ce qu\'un héros approche, et ne
 test('combat : chaque joueur est dans sa propre équipe', () => {
   const g = make(3);
   assert.deepEqual(g.players.map((p) => p.team), [0, 1, 2]);
+});
+
+import { solve } from './helpers/levelSolver.js';
+import { autopilot } from './helpers/levelAutopilot.js';
+
+test("aventure : un héros seul peut franchir chaque étage en cassant les pierres, même avec une portée agrandie par les bonus", () => {
+  LEVELS.forEach((def, i) => {
+    for (const range of [2, 3, 4]) {
+      const r = solve(buildLevel(def, i), range);
+      assert.ok(r.ok, `${def.name} : infranchissable avec une portée de ${range}`);
+    }
+  });
+});
+
+test('aventure : un héros scripté franchit chaque étage dans le vrai moteur (physique, flammes, mèche)', () => {
+  LEVELS.forEach((def, i) => {
+    const r = autopilot(def, i);
+    assert.ok(r.ok, `${def.name} : ${r.why ?? r.state}`);
+  });
+});
+
+import { fileURLToPath } from 'node:url';
+import bomberHeroes from '../vite-plugins/bomberHeroes.js';
+
+test('héros : les images boot*.png (robots) ne sont pas proposées comme héros', () => {
+  const plugin = bomberHeroes({ dir: fileURLToPath(new URL('../public/images/bomberheroes', import.meta.url)) });
+  const list = JSON.parse(plugin.load('\0virtual:bomberheroes').replace(/^export default /, '').replace(/;$/, ''));
+  assert.ok(list.length >= 1);
+  assert.ok(list.every((f) => !/^boot/i.test(f)), 'aucun boot* dans la liste');
+});
+
+test('aventure : les gardiens sont des robots et peuvent commencer avec un sort', () => {
+  const run = new AdventureRun({ heroCount: 1, startLevel: LEVELS.findIndex((d) => d.name === 'La salle du trésor') });
+  const g = run.createGame(GAME, seeded(2));
+  const foes = g.players.filter((p) => p.team === 'e');
+  assert.ok(foes.every((p) => p.bot), 'gardiens = robots');
+  assert.ok(!g.players[0].bot, 'le héros n\'est pas un robot');
+  assert.ok(foes.filter((p) => p.power === 'ice').length >= 6, 'au moins 6 gardiens avec la glace');
+  assert.equal(foes.filter((p) => p.power === 'fire').length, 1, 'un gardien avec la flamme');
+});
+
+test('combat : les participants au-delà des humains sont marqués robots', () => {
+  const g = new BomberGame({ config: { ...GAME, ...GAME.sizes[2] }, playerCount: 3, rng: seeded(1), botFrom: 1 });
+  assert.deepEqual(g.players.map((p) => p.bot), [false, true, true]);
+  g.startRound();
+  assert.deepEqual(g.players.map((p) => p.bot), [false, true, true], 'toujours marqués à la manche suivante');
+});
+
+test('aventure : la salle du trésor — coffres au départ, grande salle gardée, couloir fermé par une pierre puis porte gardée par la flamme', () => {
+  const i = LEVELS.findIndex((d) => d.name === 'La salle du trésor');
+  const L = buildLevel(LEVELS[i], i);
+  const at = (x, y) => L.cells[y * L.width + x];
+  const heroZone = (x, y) => Math.abs(x - L.heroes[0].x) + Math.abs(y - L.heroes[0].y) <= 6;
+  let chestsNearStart = 0;
+  for (let y = 0; y < L.height; y++) for (let x = 0; x < L.width; x++) if (at(x, y) === CHEST && heroZone(x, y)) chestsNearStart++;
+  assert.ok(chestsNearStart >= 2, 'salle au trésor au départ');
+  const guard = L.enemies.find((e) => e.power === 'fire');
+  assert.ok(Math.abs(guard.x - L.door.x) + Math.abs(guard.y - L.door.y) <= 1, 'le gardien à la flamme garde la porte');
+  const gate = [guard.x + 1, guard.y];
+  assert.equal(at(...gate), BLOCK, 'le couloir est fermé par une pierre');
+  assert.ok(L.enemies.filter((e) => e.power === 'ice').length >= 6);
+});
+
+test('aventure : les étages 6 et 7 demandent plusieurs sortilèges pour atteindre la porte', () => {
+  for (const name of ['Le couloir de feu', 'La salle du trône']) {
+    const i = LEVELS.findIndex((d) => d.name === name);
+    const r = solve(buildLevel(LEVELS[i], i));
+    assert.ok(r.ok && r.bombs >= 3, `${name} : ${r.bombs} sortilèges`);
+  }
+});
+
+test('rayon et flamme se propagent progressivement : un joueur lointain a le temps de se ranger', () => {
+  for (const power of ['ray', 'fire']) {
+    const g = make();
+    clear(g);
+    g.players[0].x = g.players[0].tx = 3; g.players[0].y = g.players[0].ty = 1;
+    g.players[0].dir = { dx: 1, dy: 0 };
+    g.players[1].x = g.players[1].tx = power === 'ray' ? 9 : 7; g.players[1].y = g.players[1].ty = 1;
+    g.players[0].power = power;
+    g.usePower(0);
+    const cell4 = g.flames.find((f) => f.x === 4 && f.y === 1);
+    const cell8 = g.flames.find((f) => f.x === (power === 'ray' ? 9 : 7) && f.y === 1);
+    assert.ok(cell4.delay < cell8.delay, `${power} : propagation`);
+    g.setInput(1, 0, 1); // la cible quitte la ligne
+    run(g, 1.2);
+    assert.equal(g.players[1].alive, true, `${power} : cible écartée à temps`);
+  }
 });

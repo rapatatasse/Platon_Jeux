@@ -32,6 +32,7 @@ export class Renderer {
     this.heroes = heroes;
     this.picks = [];
     this.colors = [];
+    this.botSprites = null;
     this.fx = [];
     this.shake = 0;
     this.now = 0;
@@ -217,12 +218,13 @@ export class Renderer {
   onDeath(player, x, y, cause) {
     const c = this.colorOf(player);
     const cx = px(x) + T / 2, cy = py(y) + T / 2;
+    const bot = !!this.game.players[player]?.bot;
     if (cause === 'fall') {
-      this.add({ type: 'ghost', fall: true, x: cx, y: cy, life: 0.9, max: 0.9, player, face: this.face[player] || 'droite' });
+      this.add({ type: 'ghost', fall: true, bot, x: cx, y: cy, life: 0.9, max: 0.9, player, face: this.face[player] || 'droite' });
       this.puff(cx, cy, 4, '#05060a');
       return;
     }
-    this.add({ type: 'ghost', x: cx, y: cy, life: 1.3, max: 1.3, player, face: this.face[player] || 'droite' });
+    this.add({ type: 'ghost', bot, x: cx, y: cy, life: 1.3, max: 1.3, player, face: this.face[player] || 'droite' });
     this.burst(cx, cy, 22, c, 150);
     this.puff(cx, cy, 6, '#6a6f80');
     this.shake = Math.max(this.shake, 3);
@@ -450,8 +452,9 @@ export class Renderer {
     const cx = px(pos.x) + T / 2, feet = py(pos.y) + T * 0.88;
     const moving = p.prog > 0;
     const bob = moving ? -Math.abs(Math.sin(this.now * 15)) * 3 : Math.sin(this.now * 2 + p.id) * 0.8;
-    const sprite = this.spriteFor(p.id, p.dir);
-    const h = T * 1.6, w = h * (sprite.width / sprite.height);
+    const bot = !!(p.bot && this.botSprites);
+    const sprite = bot ? (p.power ? this.botSprites.spell : this.botSprites.normal) : this.spriteFor(p.id, p.dir);
+    const h = bot ? T * 1.2 : T * 1.6, w = h * (sprite.width / sprite.height);
     const color = this.colorOf(p.id);
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.beginPath(); ctx.ellipse(cx, feet, 15, 6, 0, 0, TAU); ctx.fill();
@@ -484,11 +487,31 @@ export class Renderer {
     ctx.fillStyle = color;
     const my = feet - h - 2 + bob;
     ctx.beginPath(); ctx.moveTo(cx, my + 7); ctx.lineTo(cx - 5, my); ctx.lineTo(cx + 5, my); ctx.closePath(); ctx.fill();
-    if (p.power) {
-      const pw = POWERS[p.power];
-      this.glow(ctx, cx + 20, feet - h * 0.7 + bob, 14, pw.color + '77');
-      ctx.fillStyle = pw.color; ctx.beginPath(); ctx.arc(cx + 20, feet - h * 0.7 + bob, 5, 0, TAU); ctx.fill();
+    if (p.power && !bot) {
+      // Lumière scintillante au bout de la baguette (en haut à droite quand le personnage regarde à droite), couleur du sort.
+      const side = this.face[p.id] === 'gauche' ? -1 : 1;
+      this.wandSparkle(ctx, cx + side * w * 0.32, feet - h * 0.84 + bob, POWERS[p.power].color, p.id);
     }
+  }
+
+  wandSparkle(ctx, x, y, color, seed) {
+    const t = this.now * 7 + seed * 1.7;
+    const twinkle = 0.5 + 0.5 * Math.sin(t) * Math.sin(t * 0.53 + 1);
+    this.glow(ctx, x, y, 20 + twinkle * 12, rgba(color, 0.4 + twinkle * 0.35));
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.translate(x, y); ctx.rotate(this.now * 1.4);
+    ctx.strokeStyle = '#ffffff'; ctx.lineCap = 'round'; ctx.lineWidth = 1.6;
+    const len = 4 + twinkle * 9;
+    ctx.beginPath();
+    ctx.moveTo(-len, 0); ctx.lineTo(len, 0); ctx.moveTo(0, -len); ctx.lineTo(0, len);
+    ctx.stroke();
+    ctx.strokeStyle = color; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-len * 0.6, -len * 0.6); ctx.lineTo(len * 0.6, len * 0.6); ctx.moveTo(len * 0.6, -len * 0.6); ctx.lineTo(-len * 0.6, len * 0.6);
+    ctx.stroke();
+    ctx.restore();
+    if (Math.random() < 0.3) this.add({ type: 'spark', x: x + (Math.random() - 0.5) * 12, y: y + (Math.random() - 0.5) * 12, vx: (Math.random() - 0.3) * 24, vy: -18 - Math.random() * 22, life: 0.6, max: 0.6, size: 1.4 + Math.random() * 1.2, color });
   }
 
   /** Porte de sortie du mode Aventure : escalier lumineux qui monte à l'étage suivant. */
@@ -672,18 +695,18 @@ export class Renderer {
           break;
         }
         case 'ghost': {
+          const hero = this.heroes[this.picks[f.player] ?? f.player % this.heroes.length];
+          const sprite = f.bot && this.botSprites ? this.botSprites.normal : (hero[f.face] || hero.droite);
+          const base = f.bot && this.botSprites ? T * 1.2 : T * 1.6;
           if (f.fall) {
-            const hero = this.heroes[this.picks[f.player] ?? f.player % this.heroes.length];
-            const sprite = hero[f.face] || hero.droite, e = 1 - k;
-            const h = T * 1.6 * (1 - e * 0.7), w = h * (sprite.width / sprite.height);
+            const e = 1 - k;
+            const h = base * (1 - e * 0.7), w = h * (sprite.width / sprite.height);
             ctx.globalAlpha = k;
             ctx.translate(f.x, f.y + T * 0.4 + e * 60); ctx.rotate(e * 2.2);
             ctx.drawImage(sprite, -w / 2, -h, w, h);
             break;
           }
-          const hero = this.heroes[this.picks[f.player] ?? f.player % this.heroes.length];
-          const sprite = hero[f.face] || hero.droite;
-          const h = T * 1.6, w = h * (sprite.width / sprite.height), rise = (1 - k) * 46;
+          const h = base, w = h * (sprite.width / sprite.height), rise = (1 - k) * 46;
           ctx.globalAlpha = k * 0.65;
           ctx.drawImage(this.tinted(sprite, '#c8d0ff', 0.6), f.x - w / 2, f.y + T * 0.38 - h - rise, w, h * (0.6 + k * 0.4));
           break;

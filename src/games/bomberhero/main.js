@@ -7,7 +7,7 @@ import { Bot } from './core/Bot.js';
 import { AdventureRun, LEVELS } from './core/adventure.js';
 import { Renderer } from './render/Renderer.js';
 import heroFiles from 'virtual:bomberheroes';
-import { loadHeroes } from './render/sprites.js';
+import { loadHeroes, loadBotSprites } from './render/sprites.js';
 import { Input } from './input.js';
 import { Sounds } from './sounds.js';
 import { Music } from '../../shared/Music.js';
@@ -29,15 +29,17 @@ const sounds = new Sounds();
 const music = new Music({ volume: 0.2 });
 let renderer, input;
 let bots = [];
+let botArt = null;
 
 const adventure = () => state.kind === 'adventure';
 const total = () => (adventure() ? state.humans : state.humans + state.botCount);
 const pickOf = (i) => (state.advPicks ? state.advPicks[i] : state.picks[i]);
+const isBotSlot = (i) => i >= state.humans;
 const nameOf = (i) => {
-  const name = heroes[pickOf(i)].name;
-  if (state.advPicks && i >= state.humans) return `${name} (gardien)`;
-  return `${name}${i < state.humans ? '' : ' (robot)'}`;
+  if (isBotSlot(i)) return `${state.advPicks ? 'Gardien' : 'Robot'} ${i - state.humans + 1}`;
+  return heroes[pickOf(i)].name;
 };
+const thumbOf = (i) => (isBotSlot(i) ? botArt.thumb : heroes[pickOf(i)].thumb);
 
 function show(id, on) { $(id).hidden = !on; }
 function setText(el, text) { if (el.textContent !== text) el.textContent = text; }
@@ -172,7 +174,9 @@ function renderRoster() {
     return `
     <div class="pcard" style="--c:${state.colors[i]}"><h3>${nameOf(i)}</h3><div class="slot">${human ? PLAYERS[i].name : 'Robot'}</div>
       ${rows}
-      <div class="hero"><button type="button" data-hero="${i}" data-d="-1" aria-label="Héros précédent">‹</button><img src="${heroes[state.picks[i]].thumb}" alt="${heroes[state.picks[i]].name}" data-hero="${i}" data-d="1" /><button type="button" data-hero="${i}" data-d="1" aria-label="Héros suivant">›</button></div>
+      ${human
+    ? `<div class="hero"><button type="button" data-hero="${i}" data-d="-1" aria-label="Héros précédent">‹</button><img src="${heroes[state.picks[i]].thumb}" alt="${heroes[state.picks[i]].name}" data-hero="${i}" data-d="1" /><button type="button" data-hero="${i}" data-d="1" aria-label="Héros suivant">›</button></div>`
+    : `<div class="hero"><img src="${botArt.thumb}" alt="Robot" /></div>`}
       ${human ? `<div class="pad" data-pad="${i}">Manette ${i + 1}</div>` : '<div class="pad bot">Robot</div>'}</div>`;
   }).join('');
   refreshPads();
@@ -212,7 +216,7 @@ function startMatch() {
   }
   state.run = null; state.advPicks = null; state.after = null;
   renderer.picks = state.picks;
-  const game = new BomberGame({ config: { ...GAME, ...GAME.sizes?.[total()], layout: state.map }, playerCount: total() });
+  const game = new BomberGame({ config: { ...GAME, ...GAME.sizes?.[total()], layout: state.map }, playerCount: total(), botFrom: state.humans });
   state.game = game;
   assignColors();
   input.count = state.humans;
@@ -301,7 +305,7 @@ function wire(game) {
     $('final-title').textContent = `${nameOf(winner)} gagne la partie`;
     $('final-title').style.color = state.colors[winner];
     const hero = $('final-hero');
-    hero.src = heroes[state.picks[winner]].thumb;
+    hero.src = thumbOf(winner);
     hero.alt = nameOf(winner);
     hero.style.setProperty('--c', state.colors[winner]);
     $('final-score').textContent = game.wins.map((w, i) => `${nameOf(i)} ${w}`).join('  ·  ');
@@ -351,7 +355,7 @@ function buildHud(game) {
   const adv = adventure();
   $('cards').innerHTML = game.players.filter((p) => p.team !== 'e').map((p, i) => `
     <div class="card" data-card="${i}" style="--c:${state.colors[i]}">
-      <span class="name"><img class="avatar" src="${heroes[pickOf(i)].thumb}" alt="" />${nameOf(i)}</span>
+      <span class="name"><img class="avatar" src="${thumbOf(i)}" alt="" />${nameOf(i)}</span>
       <span class="stats"></span>
       ${adv ? '' : `<span class="pips" style="grid-column:1/-1">${'<i></i>'.repeat(GAME.roundsToWin)}</span>`}
       <span class="power"></span></div>`).join('');
@@ -430,11 +434,13 @@ async function boot() {
   mountGameChrome();
   input = new Input(PLAYERS, { onAction: action, onConfirm: () => { if (state.mode === 'menu') startMatch(); } });
   heroes = await loadHeroes(import.meta.env.BASE_URL, heroFiles);
+  botArt = await loadBotSprites(import.meta.env.BASE_URL);
   PLAYERS.forEach((_, i) => { state.picks[i] = i % heroes.length; });
   buildMenu();
   renderer = new Renderer($('arena'), { heroes, width: GAME.width, height: GAME.height });
   renderer.picks = state.picks;
   renderer.colors = state.colors;
+  renderer.botSprites = botArt;
   const demo = new BomberGame({ config: GAME, playerCount: 4 });
   renderer.attach(demo);
   state.game = null;

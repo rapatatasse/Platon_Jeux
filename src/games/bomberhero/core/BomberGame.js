@@ -17,13 +17,14 @@ export class BomberGame extends Emitter {
    * Mode Aventure : `level` (voir adventure.js) + `heroCount` héros (équipe 'h') contre les gardiens du niveau (équipe 'e') ;
    * `carry` = améliorations conservées des étages précédents. Évènements en plus : levelCleared {player, revived}, levelFailed {reason}.
    */
-  constructor({ config, playerCount = 2, rng = Math.random, level = null, heroCount = 1, carry = null }) {
+  constructor({ config, playerCount = 2, rng = Math.random, level = null, heroCount = 1, carry = null, botFrom = null }) {
     super();
     this.cfg = config;
     this.rng = rng;
     this.level = level;
     this.heroCount = heroCount;
     this.carry = carry;
+    this.botFrom = botFrom;
     this.width = level?.width ?? config.width;
     this.height = level?.height ?? config.height;
     if (level) playerCount = heroCount + level.enemies.length;
@@ -58,14 +59,14 @@ export class BomberGame extends Emitter {
     this.closingTimer = 0;
     this.nextBombId = 1;
     const newPlayer = (i, x, y, dx, dy, team) => ({
-      id: i, team, x, y, tx: x, ty: y, prog: 0, dir: { dx, dy }, intent: { dx: 0, dy: 0 },
+      id: i, team, bot: this.botFrom !== null && i >= this.botFrom, x, y, tx: x, ty: y, prog: 0, dir: { dx, dy }, intent: { dx: 0, dy: 0 },
       alive: true, frozen: 0, slowT: 0, hasteT: 0, forced: null, power: null,
       bombsMax: c.player.bombs, range: c.player.range, speed: c.player.speed,
     });
     if (this.level) {
       this.players = [
         ...this.level.heroes.slice(0, this.heroCount).map((s, i) => Object.assign(newPlayer(i, s.x, s.y, 1, 0, 'h'), this.carry?.[i])),
-        ...this.level.enemies.map((e, k) => Object.assign(newPlayer(this.heroCount + k, e.x, e.y, -1, 0, 'e'), { enemyLevel: e.level })),
+        ...this.level.enemies.map((e, k) => Object.assign(newPlayer(this.heroCount + k, e.x, e.y, -1, 0, 'e'), { enemyLevel: e.level, bot: true, power: e.power ?? null })),
       ];
     } else {
       const spawns = spawnPoints(this.width, this.height, this.layoutId);
@@ -184,7 +185,7 @@ export class BomberGame extends Emitter {
         if (t === WALL) break;
         cells.push({ x: cx, y: cy });
         if (t === VOID) continue;
-        this.flames.push({ x: cx, y: cy, t: pw.ray.flame, total: pw.ray.flame, kind: 'ray', owner: id });
+        this.flames.push({ x: cx, y: cy, t: pw.ray.flame, total: pw.ray.flame, kind: 'ray', owner: id, delay: i * pw.ray.delay });
         if (t !== FLOOR) { this.destroyBlock(cx, cy); break; }
       }
     } else if (power === 'fire') {

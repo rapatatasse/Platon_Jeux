@@ -14,7 +14,7 @@ import { BomberGame } from './BomberGame.js';
  *   fill           rectangles [x0, y0, x1, y1, densité] semés de pierres cassables (tirage fixe : même carte à chaque partie)
  *   gates          cases fermées par une pierre (portes de salle)
  *   chests         coffres [x, y]
- *   enemies        gardiens [x, y, niveau] : '1' facile, '2' normal, '3' difficile
+ *   enemies        gardiens [x, y, niveau, pouvoir?] : niveau '1' facile, '2' normal, '3' difficile ; pouvoir de départ facultatif ('ice', 'fire'…)
  *   heroes         départs des joueurs [x, y] (le 2e sert au joueur 2)
  *   door           la porte de sortie [x, y]
  *   aggro          distance (en cases) à laquelle un gardien se réveille
@@ -43,7 +43,7 @@ export const LEVELS = [
     name: 'La salle des gardes', width: 17, height: 13, time: 170, aggro: 8,
     carve: [[1, 8, 5, 11], [9, 7, 15, 11], [9, 1, 15, 5], [1, 1, 6, 5], [5, 10, 9, 10], [12, 5, 12, 7], [6, 3, 9, 3]],
     pillars: [[9, 7, 15, 11], [9, 1, 15, 5]],
-    fill: [[9, 7, 15, 11, 0.3], [9, 1, 15, 5, 0.3], [1, 1, 6, 5, 0.25]],
+    fill: [[9, 7, 15, 11, 0.3], [9, 1, 15, 5, 0.3], [1, 1, 6, 5, 0.15]],
     gates: [[7, 10], [12, 6], [7, 3]],
     chests: [[10, 9], [9, 3], [3, 3]],
     enemies: [[12, 9, '1'], [14, 8, '1'], [12, 3, '2'], [5, 2, '2']],
@@ -51,13 +51,16 @@ export const LEVELS = [
   },
   {
     name: 'Les cachots', width: 17, height: 13, time: 0, aggro: 9,
-    carve: [[1, 11, 15, 11], [15, 9, 15, 11], [1, 9, 15, 9], [1, 7, 1, 9], [1, 7, 15, 7], [15, 5, 15, 7], [1, 5, 15, 5], [1, 3, 1, 5], [1, 3, 15, 3], [15, 1, 15, 3], [1, 1, 15, 1],
-      [6, 8, 10, 8], [6, 4, 10, 4], [6, 2, 10, 2]],
-    fill: [[2, 11, 14, 11, 0.18], [2, 9, 14, 9, 0.18], [2, 7, 14, 7, 0.18], [2, 5, 14, 5, 0.18], [2, 3, 14, 3, 0.18], [2, 1, 14, 1, 0.18]],
-    gates: [[15, 10], [1, 8], [15, 6], [1, 4], [15, 2]],
-    chests: [[8, 8], [8, 4], [8, 2]],
-    enemies: [[9, 9, '2'], [5, 7, '2'], [11, 5, '2'], [6, 3, '2']],
-    heroes: [[1, 11], [2, 11]], door: [1, 1],
+    carve: [
+      [1, 9, 3, 11], [7, 9, 9, 11], [13, 9, 15, 11], [4, 10, 6, 10], [10, 10, 12, 10],
+      [14, 7, 14, 9], [13, 5, 15, 7], [7, 5, 9, 7], [1, 5, 3, 7], [10, 6, 12, 6], [4, 6, 6, 6],
+      [2, 3, 2, 5], [1, 1, 3, 3], [7, 1, 9, 3], [13, 1, 15, 3], [4, 2, 6, 2], [10, 2, 12, 2],
+    ],
+    fill: [[1, 9, 3, 11, 0.15], [7, 9, 9, 11, 0.15], [13, 9, 15, 11, 0.15], [13, 5, 15, 7, 0.15], [7, 5, 9, 7, 0.15], [1, 5, 3, 7, 0.15], [1, 1, 3, 3, 0.15], [7, 1, 9, 3, 0.15], [13, 1, 15, 3, 0.15]],
+    gates: [[5, 10], [11, 10], [14, 8], [11, 6], [5, 6], [2, 4], [5, 2], [11, 2]],
+    chests: [[8, 10], [8, 6], [2, 6]],
+    enemies: [[9, 9, '2'], [15, 5, '2'], [7, 5, '2'], [8, 2, '2']],
+    heroes: [[1, 11], [2, 11]], door: [15, 1],
   },
   {
     name: 'La bibliothèque', width: 17, height: 13, time: 150, aggro: 9,
@@ -71,8 +74,8 @@ export const LEVELS = [
   {
     name: 'Le couloir de feu', width: 17, height: 13, time: 110, aggro: 10,
     carve: [[1, 6, 15, 6], [3, 2, 5, 5], [9, 2, 11, 5], [13, 2, 15, 5], [3, 7, 5, 10], [9, 7, 11, 10], [13, 7, 15, 10]],
-    fill: [[3, 2, 5, 5, 0.3], [9, 2, 11, 5, 0.3], [13, 2, 15, 5, 0.3], [3, 7, 5, 10, 0.3], [9, 7, 11, 10, 0.3], [13, 7, 15, 10, 0.3]],
-    gates: [[7, 6], [12, 6]],
+    fill: [[3, 2, 5, 5, 0.3], [9, 2, 11, 5, 0.3], [13, 2, 15, 5, 0.3], [3, 7, 5, 10, 0.3], [9, 7, 11, 10, 0.3], [13, 7, 15, 10, 0.3], [1, 6, 15, 6, 0.12]],
+    gates: [[4, 6], [7, 6], [10, 6], [12, 6], [14, 6]],
     chests: [[4, 3], [10, 9], [14, 4]],
     enemies: [[10, 3, '2'], [4, 8, '3'], [14, 8, '3'], [8, 6, '2']],
     heroes: [[1, 6], [2, 6]], door: [15, 6],
@@ -81,10 +84,21 @@ export const LEVELS = [
     name: 'La salle du trône', width: 17, height: 13, time: 160, aggro: 10,
     carve: [[3, 2, 13, 10], [1, 10, 3, 10], [8, 1, 8, 2]],
     pillars: [[3, 4, 13, 10]],
-    fill: [[3, 2, 13, 10, 0.28]],
+    fill: [[3, 2, 13, 10, 0.55]],
+    gates: [[8, 2], [8, 3], [6, 3], [10, 3]],
     chests: [[4, 3], [12, 3], [4, 9], [12, 9]],
     enemies: [[8, 5, '3'], [5, 6, '2'], [11, 6, '2'], [8, 8, '3'], [6, 3, '2']],
     heroes: [[1, 10], [2, 10]], door: [8, 1],
+  },
+  {
+    name: 'La salle du trésor', width: 17, height: 13, time: 230, aggro: 11,
+    carve: [[1, 9, 5, 11], [5, 10, 7, 10], [7, 4, 15, 11], [8, 2, 8, 3], [1, 1, 8, 1]],
+    pillars: [[7, 5, 15, 11]],
+    fill: [[1, 9, 5, 11, 0.2], [7, 4, 15, 11, 0.18]],
+    gates: [[6, 10], [3, 1]],
+    chests: [[3, 9], [5, 9], [4, 11], [10, 5], [14, 5]],
+    enemies: [[9, 8, '2', 'ice'], [12, 6, '2', 'ice'], [14, 9, '2', 'ice'], [10, 10, '2', 'ice'], [13, 5, '3', 'ice'], [9, 6, '2', 'ice'], [2, 1, '3', 'fire']],
+    heroes: [[1, 11], [2, 11]], door: [1, 1],
   },
   {
     name: 'Le sommet', width: 17, height: 13, time: 190, aggro: 10,
@@ -117,8 +131,10 @@ export function buildLevel(def, index = 0) {
   (def.pillars ?? []).forEach((r) => eachIn(r, (x, y) => { if (x % 2 === 0 && y % 2 === 0) cells[at(x, y)] = WALL; }));
 
   const keep = new Set();
+  const exact = new Set();
   const protect = (x, y, around = false) => {
     keep.add(`${x},${y}`);
+    exact.add(`${x},${y}`);
     if (around) [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => keep.add(`${x + dx},${y + dy}`));
   };
   def.heroes.forEach(([x, y]) => { cells[at(x, y)] = FLOOR; protect(x, y, true); });
@@ -128,13 +144,13 @@ export function buildLevel(def, index = 0) {
   (def.fill ?? []).forEach((r) => eachIn(r, (x, y) => {
     if (cells[at(x, y)] === FLOOR && !keep.has(`${x},${y}`) && hash(x, y, index + 1) < r[4]) cells[at(x, y)] = BLOCK;
   }));
-  (def.gates ?? []).forEach(([x, y]) => { if (cells[at(x, y)] === FLOOR && !keep.has(`${x},${y}`)) cells[at(x, y)] = BLOCK; });
+  (def.gates ?? []).forEach(([x, y]) => { if (cells[at(x, y)] === FLOOR && !exact.has(`${x},${y}`)) cells[at(x, y)] = BLOCK; });
   (def.chests ?? []).forEach(([x, y]) => { if (cells[at(x, y)] !== WALL && !keep.has(`${x},${y}`)) cells[at(x, y)] = CHEST; });
 
   return {
     width, height, cells,
     heroes: def.heroes.map(([x, y]) => ({ x, y })),
-    enemies: def.enemies.map(([x, y, level]) => ({ x, y, level })),
+    enemies: def.enemies.map(([x, y, level, power]) => ({ x, y, level, power: power ?? null })),
     door: { x: def.door[0], y: def.door[1] },
     time: def.time ?? 0,
     aggro: def.aggro ?? 8,

@@ -112,3 +112,12 @@ export async function loadHeroes(baseUrl, files) {
   if (!heroes.length) throw new Error('Aucune image de héros dans public/images/bomberheroes/');
   return heroes;
 }
+
+/**
+ * Images des robots : boot.png (normal) et boot_sort.png (quand il détient un sort), dans public/images/bomberheroes/.
+ * Retourne { normal, spell, thumb } (canvas + miniature du robot normal).
+ */
+export async function loadBotSprites(baseUrl) {
+  const [normal, spell] = await Promise.all(['boot.png', 'boot_sort.png'].map(async (file) => cutOut(await load(`${baseUrl}images/bomberheroes/${file}`))));
+  return { normal, spell, thumb: normal.toDataURL() };
+}
