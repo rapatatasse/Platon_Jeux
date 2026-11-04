@@ -49,8 +49,9 @@ export class Renderer {
     this.lh = height * T + LIFT;
     this.motes = Array.from({ length: 26 }, (_, i) => ({ x: rand01(hash(i, 1)) * this.lw, y: rand01(hash(i, 2)) * this.lh, s: 0.6 + rand01(hash(i, 3)) * 1.6, v: 4 + rand01(hash(i, 4)) * 8 }));
     this.floor = this.buildFloor();
-    this.torches = [3, 7, 11].filter((x) => x < width - 1).flatMap((x) => [[x, 0], [x, height - 1]]);
-    this.banners = [5, 9].filter((x) => x < width - 1).map((x) => [x, 0]);
+    const every = (start) => Array.from({ length: Math.ceil(width / 4) }, (_, i) => start + i * 4).filter((x) => x < width - 1);
+    this.torches = every(3).flatMap((x) => [[x, 0], [x, height - 1]]);
+    this.banners = every(5).filter((x) => x % 8 !== 3).map((x) => [x, 0]);
     this.resize();
   }
 
@@ -211,7 +212,7 @@ export class Renderer {
     }
   }
 
-  colorOf(i) { return this.colors[i] ?? PLAYERS[i].color; }
+  colorOf(i) { return this.colors[i] ?? PLAYERS[i]?.color ?? '#9b59d0'; }
 
   onDeath(player, x, y, cause) {
     const c = this.colorOf(player);
@@ -244,6 +245,7 @@ export class Renderer {
     ctx.scale(this.scale, this.scale);
     ctx.drawImage(this.floor, 0, 0);
     this.drawVoid(ctx);
+    if (game.exit) this.drawExit(ctx, game.exit);
     this.drawFlames(ctx);
     for (let y = 0; y < this.rows; y++) {
       for (let x = 0; x < this.cols; x++) {
@@ -487,6 +489,27 @@ export class Renderer {
       this.glow(ctx, cx + 20, feet - h * 0.7 + bob, 14, pw.color + '77');
       ctx.fillStyle = pw.color; ctx.beginPath(); ctx.arc(cx + 20, feet - h * 0.7 + bob, 5, 0, TAU); ctx.fill();
     }
+  }
+
+  /** Porte de sortie du mode Aventure : escalier lumineux qui monte à l'étage suivant. */
+  drawExit(ctx, { x, y }) {
+    const X = px(x), Y = py(y), cx = X + T / 2, cy = Y + T / 2;
+    const pulse = 0.5 + 0.5 * Math.sin(this.now * 3);
+    this.glow(ctx, cx, cy, 70 + pulse * 14, `rgba(255,214,120,${0.28 + pulse * 0.2})`);
+    ctx.fillStyle = 'rgba(20,16,10,0.85)'; ctx.fillRect(X + 3, Y + 3, T - 6, T - 6);
+    for (let i = 0; i < 4; i++) {
+      ctx.fillStyle = `rgba(${200 + i * 15},${160 + i * 18},${80 + i * 20},0.9)`;
+      ctx.fillRect(X + 6 + i * 2, Y + T - 12 - i * 8, T - 12 - i * 4, 6);
+    }
+    ctx.strokeStyle = '#e6cc86'; ctx.lineWidth = 2.5; ctx.strokeRect(X + 2, Y + 2, T - 4, T - 4);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = '#ffe9a8'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+    for (let k = 0; k < 3; k++) {
+      const p = (this.now * 0.9 + k / 3) % 1, yy = Y + T - 8 - p * (T - 14);
+      ctx.globalAlpha = Math.sin(p * Math.PI) * 0.9;
+      ctx.beginPath(); ctx.moveTo(cx - 8, yy + 5); ctx.lineTo(cx, yy - 3); ctx.lineTo(cx + 8, yy + 5); ctx.stroke();
+    }
+    ctx.restore();
+    if (Math.random() < 0.15) this.add({ type: 'spark', x: cx + (Math.random() - 0.5) * 28, y: cy + 10, vy: -40 - Math.random() * 30, life: 0.9, max: 0.9, size: 1.8, color: '#ffe9a8' });
   }
 
   drawVoid(ctx) {

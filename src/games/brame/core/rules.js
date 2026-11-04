@@ -80,11 +80,28 @@ export class Game extends Emitter {
   _checkOver() {
     if (this.over) return true;
     const out = [0, 1].find((p) => this.pionsLeft(p) === 0);
-    if (out === undefined) return false;
+    if (out === undefined) return this._checkDecided();
     this.phase = 'over';
     this.winner = this.saved[0] === this.saved[1] ? null : this.saved[0] > this.saved[1] ? 0 : 1;
     this._log(`${this.name(out)} n'a plus de pions : fin de partie (${this.saved[0]} - ${this.saved[1]}).`);
     this.emit('over', { winner: this.winner, saved: [...this.saved] });
+    this._change();
+    return true;
+  }
+
+  /**
+   * Partie jouée d'avance : si un joueur a plus de points que l'autre n'en pourra jamais avoir
+   * (points sauvés + pions qu'il lui reste à jouer), l'écart ne peut plus être comblé : victoire immédiate.
+   * Une égalité encore possible laisse la partie continuer.
+   */
+  _checkDecided() {
+    const winner = [0, 1].find((p) => this.saved[p] > this.saved[1 - p] + this.pionsLeft(1 - p));
+    if (winner === undefined) return false;
+    const loser = 1 - winner;
+    this.phase = 'over';
+    this.winner = winner;
+    this._log(`${this.name(loser)} ne peut plus égaliser (${this.saved[winner]} - ${this.saved[loser]}, ${this.pionsLeft(loser)} pion${this.pionsLeft(loser) > 1 ? 's' : ''} en jeu) : victoire de ${this.name(winner)}.`);
+    this.emit('over', { winner, saved: [...this.saved], decided: true });
     this._change();
     return true;
   }

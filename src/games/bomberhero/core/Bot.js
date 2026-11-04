@@ -5,6 +5,7 @@ const MARGIN_BEFORE = 0.2;
 const MARGIN_AFTER = 0.3;
 const RISKY_WITHIN = 3.5;
 const MAX_STEPS = 40;
+const STALL = 2.5;   // secondes sans bouger avant que le robot soit forcé d'agir
 const POWER_RANGE = { ice: 7, push: 5, fire: 5, ray: 30 };
 
 /**
@@ -17,19 +18,24 @@ export class Bot {
   /**
    * Niveau (voir BOT_LEVELS) : think = délai de réaction (s), speed = vitesse relative, blunder = chance par seconde de
    * partir au hasard, bombDelay / powerDelay = temps d'attente avant de relancer un sortilège / d'utiliser un pouvoir.
+   * aggro = distance (en cases) à laquelle il se réveille quand un adversaire approche (gardiens du mode Aventure).
    * Par défaut : le niveau le plus fort.
    */
-  constructor(game, id, { think = 0.05, speed = 1, blunder = 0, bombDelay = 0, powerDelay = 0 } = {}) {
+  constructor(game, id, { think = 0.05, speed = 1, blunder = 0, bombDelay = 0, powerDelay = 0, aggro = Infinity } = {}) {
     this.game = game;
     this.id = id;
     this.think = think;
-    this.opts = { speed, blunder, bombDelay, powerDelay };
+    this.opts = { speed, blunder, bombDelay, powerDelay, aggro };
+    this.awake = aggro === Infinity;
     this.timer = game.rng() * think;
     this.danger = new Map();
     this.bombReady = 0;
     this.powerSince = 0;
     this.wanderUntil = 0;
     this.wanderDir = null;
+    this.activeAt = 0;
+    this.lastCell = '';
+    this.forceBombUntil = 0;
   }
 
   /**
@@ -39,7 +45,14 @@ export class Bot {
   update(dt) {
     const g = this.game, p = g.players[this.id];
     p.speedScale = this.opts.speed;
+    if (!this.awake) {
+      const near = Math.min(...this.enemies(p).map((q) => Math.abs(q.x - p.x) + Math.abs(q.y - p.y)));
+      if (!(near <= this.opts.aggro)) return;
+      this.awake = true;
+    }
     const moving = p.tx !== p.x || p.ty !== p.y;
+    const cell = `${p.x},${p.y}`;
+    if (cell !== this.lastCell) { this.lastCell = cell; this.activeAt = g.time; }
     if (this.wasMoving && !moving) this.timer = 0;
     this.wasMoving = moving;
     if (moving && !p.forced && (p.intent.dx || p.intent.dy) && this.issued) g.setInput(this.id, 0, 0);
@@ -134,7 +147,7 @@ export class Bot {
   }
 
   enemies(p) {
-    return this.game.players.filter((q) => q.alive && q !== p);
+    return this.game.players.filter((q) => q.alive && q !== p && q.team !== p.team);
   }
 
   decide() {
@@ -152,20 +165,44 @@ export class Bot {
     }
     if (this.risky(here.x, here.y)) return this.flee(p, here, t0, speed);
     if (g.time < this.wanderUntil) return this.go(this.wanderDir);
+    if (!moving && this.stalled(p, here, speed)) return undefined;
     if (!moving && this.tryPower(p, here)) return undefined;
     if (!moving && this.tryBomb(p, here, speed)) return undefined;
     if (this.opts.blunder && !moving && g.rng() < this.opts.blunder * this.think) return this.startWander(here, speed);
     return this.go(this.explore(p, here, t0, speed, moving)?.dir);
   }
 
+  /**
+   * Anti-blocage : un robot qui n'a ni bougé ni lancé de sortilège depuis STALL secondes est forcé d'agir.
+   * Il lance un sortilège s'il peut ensuite s'échapper (même sans cible), sinon il avance sur une case libre
+   * (dans un coin en L : il sort du coin, lance son sortilège, puis repart de l'autre côté).
+   */
+  stalled(p, here, speed) {
+    const g = this.game, at = g.cfg.suddenDeathAt;
+    if (at && g.time >= at - 3) return false;
+    const idle = g.time - this.activeAt;
+    if (idle < STALL && g.time >= this.forceBombUntil) return false;
+    const free = g.bombs.filter((b) => b.owner === this.id).length < p.bombsMax && !g.bombAt(here.x, here.y);
+    if (free && this.escapable(here, p, speed) && g.placeBomb(this.id)) {
+      this.activeAt = g.time; this.forceBombUntil = 0;
+      this.bombReady = g.time + this.opts.bombDelay * 0.5;
+      return true;
+    }
+    if (idle < STALL) return false;
+    this.forceBombUntil = g.time + 3;
+    this.activeAt = g.time - STALL + 0.6;
+    return this.startWander(here, speed);
+  }
+
   /** Étourderie : part au hasard dans une direction sans danger pendant un court instant. */
   startWander(here, speed) {
     const g = this.game;
     const options = DIRS.filter((d) => g.cell(here.x + d.dx, here.y + d.dy) === FLOOR && !g.bombAt(here.x + d.dx, here.y + d.dy) && !this.risky(here.x + d.dx, here.y + d.dy) && !this.unsafe(here.x + d.dx, here.y + d.dy, 1 / speed));
-    if (!options.length) return undefined;
+    if (!options.length) return false;
     this.wanderDir = options[Math.floor(g.rng() * options.length)];
     this.wanderUntil = g.time + 0.4 + g.rng() * 0.6;
-    return this.go(this.wanderDir);
+    this.go(this.wanderDir);
+    return true;
   }
 
   flee(p, here, t0, speed) {

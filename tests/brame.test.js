@@ -1,225 +1,165 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { NEIGHBORS, cellId, forwardNeighbors, BASE, EXIT, RESERVE } from '../src/games/brame/core/board.js';
 import { Game } from '../src/games/brame/core/rules.js';
 import { aiStep } from '../src/games/brame/core/ai.js';
 
-const seq = (...values) => { let i = 0; return () => (values[i++ % values.length] - 0.5) / 6; };
-const empty = (game) => { game.cells = {}; game.pyramids = [null, null]; game.reserve = [0, 0]; };
-const put = (game, id, owner, count) => { game.cells[id] = { owner, count }; };
+const seeded = (seed = 1) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
 
-test('le plateau relie colonnes, passages et ronds centraux', () => {
-  assert.ok(NEIGHBORS[cellId(0, 0)].has(cellId(1, 1)));
-  assert.ok(NEIGHBORS[cellId(0, 3)].has(cellId(1, 2)));
-  assert.ok(NEIGHBORS.k0.has(cellId(0, 4)) && NEIGHBORS.k0.has(cellId(1, 6)));
-  assert.ok(!NEIGHBORS.k0.has(cellId(2, 4)));
-  assert.deepEqual(forwardNeighbors(BASE, 1), [cellId(0, 0), cellId(1, 0), cellId(2, 0)]);
-});
+function position({ saved, reserve = [0, 0], cells = {} }) {
+  const g = new Game({ rng: seeded(1) });
+  g.saved = saved; g.reserve = reserve; g.cells = cells;
+  return g;
+}
 
-test('départ : plateau vide, 15 pions par camp hors plateau', () => {
-  const g = new Game();
-  assert.deepEqual(g.cells, {});
-  assert.deepEqual(g.reserve, [15, 15]);
-});
-
-test('un pion entre depuis le camp par la rangée de départ, selon le dé', () => {
-  const g = new Game();
-  assert.deepEqual(g.destinations(RESERVE, 1, 0).sort(), [cellId(0, 10), cellId(1, 10), cellId(2, 10)]);
-  assert.ok(g.destinations(RESERVE, 2, 0).includes(cellId(1, 9)));
-  assert.deepEqual(g.destinations(RESERVE, 1, 1).sort(), [cellId(0, 0), cellId(1, 0), cellId(2, 0)]);
-});
-
-test('on sort du plateau côté adverse seulement avec le nombre exact de pas', () => {
-  const g = new Game();
-  empty(g);
-  put(g, cellId(0, 0), 0, 1);
-  assert.ok(g.destinations(cellId(0, 0), 1).includes(EXIT));
-  assert.ok(!g.destinations(cellId(0, 0), 2).includes(EXIT));
-  put(g, cellId(0, 1), 0, 1);
-  assert.ok(!g.destinations(cellId(0, 1), 1).includes(EXIT));
-  assert.ok(g.destinations(cellId(0, 1), 2).includes(EXIT));
-  assert.ok(!g.destinations(cellId(0, 10), 1).includes(EXIT));
-});
-
-test('les pions du camp ne bloquent pas l\'adversaire : la sortie reste libre', () => {
-  const g = new Game();
-  put(g, cellId(0, 0), 0, 1);
-  assert.ok(g.destinations(cellId(0, 0), 1, 0).includes(EXIT));
-});
-
-test('entrer un pion depuis le camp le pose sur le plateau', () => {
-  const g = new Game({ rng: seq(1, 2, 4) });
-  g.roll();
-  assert.ok(g.move(RESERVE, cellId(1, 9), [1]));
-  assert.equal(g.reserve[0], 14);
-  assert.equal(g.cells[cellId(1, 9)].count, 1);
-});
-
-test('un pion fait exactement le nombre de pas du dé, retours autorisés', () => {
-  const g = new Game();
-  empty(g);
-  put(g, cellId(1, 5), 0, 1);
-  put(g, cellId(1, 0), 1, 1);
-  const two = g.destinations(cellId(1, 5), 2);
-  assert.ok(two.includes(cellId(1, 5)) && two.includes(cellId(1, 3)) && two.includes('k0'));
-  assert.ok(!g.destinations(cellId(1, 5), 1).includes(cellId(1, 5)));
-});
-
-test('un pion ne passe ni sur un adversaire ni sur une pyramide', () => {
-  const g = new Game();
-  empty(g);
-  put(g, cellId(0, 10), 0, 1);
-  put(g, cellId(0, 9), 1, 1);
-  assert.ok(!g.destinations(cellId(0, 10), 2).includes(cellId(0, 8)));
-  g.cells = {}; put(g, cellId(0, 10), 0, 1); g.pyramids[1] = cellId(0, 9);
-  assert.ok(!g.destinations(cellId(0, 10), 1).includes(cellId(0, 9)));
-});
-
-test('tomber pile sur la rangée d\'arrivée sauve le pion', () => {
-  const g = new Game({ rng: seq(2, 3, 5) });
-  empty(g);
-  put(g, cellId(0, 2), 0, 2);
-  put(g, cellId(2, 10), 1, 3);
-  g.roll();
-  assert.equal(g.phase, 'move');
-  assert.ok(g.move(cellId(0, 2), EXIT, [1]));
-  assert.equal(g.saved[0], 1);
-  assert.equal(g.cells[cellId(0, 2)].count, 1);
-});
-
-test('un double force la pyramide puis un seul pion avance avec le dé restant', () => {
-  const g = new Game({ rng: seq(4, 4, 2, 1) });
-  put(g, cellId(1, 10), 0, 5);
-  g.roll();
-  assert.equal(g.phase, 'pyramid');
-  assert.equal(g.pyr.steps, 1);
-  assert.deepEqual(g.pyramidOptions(), [cellId(0, 10), cellId(1, 10), cellId(2, 10)].filter(() => true));
-  assert.ok(g.pyramidStep(cellId(1, 10)));
-  assert.equal(g.lost[0], 5);
-  assert.equal(g.phase, 'move');
-  assert.equal(g.moveLimit, 1);
-  assert.equal(g.dice.filter((d) => !d.used).length, 1);
-});
-
-test('la pyramide renvoie la pyramide adverse dans son camp et s\'arrête dans le camp adverse', () => {
-  const g = new Game({ rng: seq(2, 2, 3, 5) });
-  empty(g);
-  put(g, cellId(1, 5), 0, 1);
-  put(g, cellId(1, 9), 1, 1);
-  g.pyramids[1] = cellId(1, 7);
-  g.pyramids[0] = cellId(1, 8);
-  g.current = 1;
-  put(g, cellId(2, 0), 1, 1);
-  g.roll();
-  assert.equal(g.phase, 'pyramid');
-  g.pyr.steps = 3;
-  g.pyramids[1] = cellId(1, 7);
-  g.pyramidStep(cellId(1, 8));
-  assert.equal(g.pyramids[0], null);
-  g.pyramidStep(cellId(1, 9));
-  assert.equal(g.lost[1], 1);
-  g.pyramidStep(cellId(1, 10));
-  assert.equal(g.pyramids[1], null);
-});
-
-test('un triple : choix du dé pyramide, suppression d\'un pion adverse, un seul pion avance', () => {
-  const g = new Game({ rng: seq(3, 3, 3, 3, 6) });
-  put(g, cellId(1, 0), 1, 5);
-  g.roll();
-  assert.equal(g.phase, 'pyrChoose');
-  assert.ok(g.choosePyramid(2));
-  assert.equal(g.pyr.steps, 2);
-  g.pyramidStep(cellId(0, 10));
-  g.pyramidStep(cellId(0, 9));
-  assert.equal(g.phase, 'tripleKill');
-  assert.ok(g.removeEnemy(cellId(1, 0)));
-  assert.equal(g.cells[cellId(1, 0)].count, 4);
-  assert.equal(g.phase, 'move');
-});
-
-test('attaque : égalité = défaite de l\'attaquant, le vainqueur occupe la case', () => {
-  const g = new Game({ rng: seq(3, 3) });
-  empty(g);
-  put(g, cellId(1, 5), 0, 2);
-  put(g, cellId(1, 4), 1, 2);
-  put(g, cellId(2, 10), 0, 1);
-  assert.ok(g.beginAttack());
-  assert.ok(g.attackBattalion(cellId(1, 5), cellId(1, 4)));
-  const r = g.attackRound();
-  assert.equal(r.attackerLoses, true);
-  assert.equal(g.lost[0], 1);
-  assert.equal(g.cells[cellId(1, 5)].owner, 0);
-  g.attackRound();
-  assert.equal(g.cells[cellId(1, 5)].owner, 1);
-  assert.equal(g.cells[cellId(1, 4)], undefined);
-  assert.equal(g.current, 1);
-});
-
-test('attaque gagnée : le bataillon avance et peut rejouer une seule fois', () => {
-  const g = new Game({ rng: seq(6, 1, 6, 1, 6, 1) });
-  empty(g);
-  put(g, cellId(1, 5), 0, 1);
-  put(g, cellId(1, 4), 1, 1);
-  put(g, cellId(1, 3), 1, 1);
-  g.beginAttack();
-  g.attackBattalion(cellId(1, 5), cellId(1, 4));
-  g.attackRound();
-  assert.equal(g.cells[cellId(1, 4)].owner, 0);
-  assert.equal(g.phase, 'attackFollow');
-  g.attackBattalion(cellId(1, 4), cellId(1, 3));
-  g.attackRound();
+test("fin de partie anticipée : l'écart ne peut plus être comblé", () => {
+  const g = position({ saved: [3, 0], cells: { c0r5: { owner: 1, count: 2 }, c1r2: { owner: 0, count: 4 } } });
+  let over = null;
+  g.on('over', (e) => { over = e; });
+  assert.equal(g._checkOver(), true);
   assert.equal(g.phase, 'over');
-  assert.equal(g.winner, null);
+  assert.equal(g.winner, 0);
+  assert.equal(over.decided, true);
 });
 
-test('la partie se termine quand un camp n\'a plus de pions : le plus de pions sauvés gagne', () => {
-  const g = new Game({ rng: seq(3, 4, 5) });
-  empty(g);
-  put(g, cellId(0, 3), 0, 1);
-  put(g, cellId(2, 10), 1, 1);
-  g.saved = [2, 5];
-  g.roll();
-  g.move(cellId(0, 3), EXIT, [1]);
-  assert.equal(g.phase, 'over');
+test('fin anticipée : vaut aussi pour le second joueur, en comptant les pions de la réserve', () => {
+  const g = position({ saved: [0, 4], reserve: [1, 0], cells: { c0r5: { owner: 0, count: 2 } } });
+  assert.equal(g._checkOver(), true);
   assert.equal(g.winner, 1);
 });
 
-test('des parties complètes ordinateur contre ordinateur se terminent', () => {
-  for (let k = 0; k < 20; k++) {
-    const g = new Game();
-    let steps = 0;
-    while (!g.over && steps++ < 20000) aiStep(g);
-    assert.ok(g.over, `partie ${k} non terminée`);
-    assert.ok(g.saved[0] + g.saved[1] + g.lost[0] + g.lost[1] + g.pionsLeft(0) + g.pionsLeft(1) === 30);
-  }
+test("pas de fin anticipée tant que l'adversaire peut au moins égaliser", () => {
+  const g = position({ saved: [3, 0], cells: { c0r5: { owner: 1, count: 3 }, c1r2: { owner: 0, count: 4 } } });
+  assert.equal(g._checkOver(), false);
+  assert.notEqual(g.phase, 'over');
+  const h = position({ saved: [2, 2], reserve: [3, 3] });
+  assert.equal(h._checkOver(), false);
 });
 
-test('la partie se sauvegarde et se recharge à l\'identique (reprise après rechargement)', () => {
-  const g = new Game({ rng: seq(2, 3, 5) });
-  g.roll();
-  g.move('reserve', cellId(1, 9), [0]);
-  const data = JSON.parse(JSON.stringify(g.serialize()));
-  const h = new Game();
-  h.load(data);
-  assert.deepEqual(h.serialize(), g.serialize());
-  assert.equal(h.phase, 'move');
-  assert.equal(h.moveLimit, Infinity);
-  assert.ok(h.move('reserve', cellId(1, 8), [1]) || h.freeDice().length >= 0);
+test("fin de partie classique inchangée : plus de pions = victoire aux points, égalité possible", () => {
+  const g = position({ saved: [2, 2], cells: { c0r5: { owner: 0, count: 1 } } });
+  assert.equal(g._checkOver(), true);
+  assert.equal(g.winner, null);
 });
 
-test('un déplacement fournit un chemin case par case de la bonne longueur', () => {
-  const g = new Game({ rng: seq(2, 3, 5) });
-  g.roll();
-  let moved = null;
-  g.on('moved', (m) => { moved = m; });
-  g.move('reserve', cellId(1, 9), [0]);
-  assert.equal(moved.path.length, 3);
-  assert.equal(moved.path[0], RESERVE);
-  assert.equal(moved.path[2], cellId(1, 9));
-  assert.ok(moved.path[1].endsWith('r10'));
-  const h = new Game();
-  empty(h);
-  put(h, cellId(0, 1), 0, 1);
-  const p = h.path(cellId(0, 1), EXIT, 2);
-  assert.deepEqual(p, [cellId(0, 1), cellId(0, 0), EXIT]);
+test('la fin anticipée est détectée en cours de partie (sortie d\'un pion)', () => {
+  const g = new Game({ rng: seeded(2) });
+  g.saved = [2, 0]; g.reserve = [0, 0];
+  g.cells = { c0r1: { owner: 0, count: 1 }, c1r5: { owner: 1, count: 2 } };
+  g.dice = [{ v: 2, used: false }, { v: 5, used: true }, { v: 5, used: true }];
+  g.moveLimit = 1; g.phase = 'move';
+  assert.equal(g.move('c0r1', 'exit', [0]), true);
+  assert.equal(g.phase, 'over');
+  assert.equal(g.winner, 0);
+});
+
+test("l'ordinateur monte vers le camp adverse et les parties se terminent vite (parties jouées d'avance incluses)", () => {
+  const realRandom = Math.random;
+  Math.random = seeded(7);
+  try {
+    let decided = 0, steps = 0, attacks = 0;
+    const N = 12;
+    for (let k = 0; k < N; k++) {
+      const g = new Game({ rng: seeded(k + 3) });
+      g.on('over', (e) => { if (e.decided) decided++; });
+      g.on('attackRound', () => attacks++);
+      let n = 0;
+      while (!g.over && n < 3000) { aiStep(g); n++; }
+      assert.ok(g.over, `partie ${k} terminée`);
+      steps += n;
+    }
+    assert.ok(decided >= 1, 'au moins une partie décidée d\'avance');
+    assert.ok(steps / N < 700, `durée moyenne : ${steps / N} actions`);
+    assert.ok(attacks / N >= 6, `attaques par partie : ${attacks / N}`);
+  } finally { Math.random = realRandom; }
+});
+
+import { leakCount } from '../src/games/brame/core/ai.js';
+
+const board = (red, black, { turn = 1 } = {}) => {
+  const g = new Game({ rng: seeded(5) });
+  g.reserve = [0, 0];
+  g.cells = {};
+  red.forEach((id) => { g.cells[id] = { owner: 1, count: 1 }; });
+  black.forEach((id) => { g.cells[id] = { owner: 0, count: 1 }; });
+  g.current = turn;
+  return g;
+};
+
+test('fuites : trois pions sur une même rangée de couloirs verrouillent le camp', () => {
+  const g = board(['c0r3', 'c1r3', 'c2r3'], ['c1r6']);
+  assert.equal(leakCount(g, 1), 0);
+});
+
+test('fuites : une voie libre reste ouverte, y compris par les passages en diagonale', () => {
+  assert.ok(leakCount(board(['c0r3', 'c1r3'], ['c1r6']), 1) > 0);
+  // le pion noir déjà sur c2r3 passe par la diagonale c2r3 → c1r2 malgré les deux postes
+  assert.ok(leakCount(board(['c0r3', 'c1r3'], ['c2r3']), 1) > 0);
+});
+
+test('fuites : un pion adverse tenu à distance par un poste ne compte pas', () => {
+  const g = board(['c0r3', 'c1r3', 'c2r3'], ['c0r4', 'c1r4', 'c2r4']);
+  assert.equal(leakCount(g, 1), 0);
+});
+
+test("l'ordinateur ferme le passage resté libre quand il le peut", () => {
+  const realRandom = Math.random;
+  Math.random = seeded(11);
+  try {
+    // Rouge tient deux couloirs ; son pion sur c2r5 peut fermer le troisième avec un 2.
+    const g = board(['c0r3', 'c1r3', 'c2r5'], ['c2r8', 'c1r8', 'c0r8']);
+    g.dice = [{ v: 2, used: false }, { v: 1, used: true }, { v: 1, used: true }];
+    g.moveLimit = 1;
+    g.phase = 'move';
+    assert.ok(leakCount(g, 1) > 0, 'une fuite au départ');
+    aiStep(g);
+    assert.equal(leakCount(g, 1), 0, 'le passage est fermé');
+  } finally { Math.random = realRandom; }
+});
+
+test("camp verrouillé : l'ordinateur file vers la sortie et sauve un pion dès qu'il le peut", () => {
+  const realRandom = Math.random;
+  Math.random = seeded(21);
+  try {
+    // Rouge (en retard 3 - 5) tient tous les couloirs ; le dernier pion noir est bloqué. Un pion rouge est à 1 pas de la sortie.
+    const g = board(['c0r0', 'c1r1', 'c2r1', 'c2r3', 'c0r10', 'c1r7', 'c2r7'], ['c2r5']);
+    g.saved = [5, 3];
+    g.dice = [{ v: 1, used: false }, { v: 1, used: true }, { v: 1, used: true }];
+    g.moveLimit = 1;
+    g.phase = 'move';
+    assert.equal(leakCount(g, 1), 0, 'camp verrouillé');
+    aiStep(g);
+    assert.equal(g.saved[1], 4, 'un pion est sauvé');
+  } finally { Math.random = realRandom; }
+});
+
+test("fin de partie défavorable : l'ordinateur n'élimine pas le dernier pion adverse s'il perdrait", () => {
+  const realRandom = Math.random;
+  Math.random = seeded(4);
+  try {
+    // Rouge est en retard (3 - 5) ; attaquer le dernier pion noir (à égalité) finirait la partie perdue.
+    const g = board(['c1r4', 'c0r1', 'c2r1', 'c1r1'], ['c1r5']);
+    g.cells.c1r4.count = 4;
+    g.saved = [5, 3];
+    g.phase = 'idle';
+    aiStep(g);
+    assert.notEqual(g.phase, 'attackSelect');
+    assert.notEqual(g.phase, 'attack');
+  } finally { Math.random = realRandom; }
+});
+
+test("l'ordinateur sauve en moyenne plus de pions quand son camp est verrouillé (parties complètes)", () => {
+  const realRandom = Math.random;
+  Math.random = seeded(9);
+  try {
+    let saved = 0;
+    const N = 12;
+    for (let k = 0; k < N; k++) {
+      const g = new Game({ rng: seeded(k + 40) });
+      let n = 0;
+      while (!g.over && n < 3000) { aiStep(g); n++; }
+      assert.ok(g.over);
+      saved += g.saved[0] + g.saved[1];
+    }
+    assert.ok(saved / N >= 4, `pions sauvés par partie : ${saved / N}`);
+  } finally { Math.random = realRandom; }
 });

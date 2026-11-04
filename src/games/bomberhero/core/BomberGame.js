@@ -12,12 +12,21 @@ const BONUS_KINDS = ['bomb', 'range', 'speed'];
  * Repère : x vers la droite, y vers le bas, centre d'une case = coordonnées entières.
  */
 export class BomberGame extends Emitter {
-  constructor({ config, playerCount = 2, rng = Math.random }) {
+  /**
+   * Mode Combat : `playerCount` joueurs sur une carte générée.
+   * Mode Aventure : `level` (voir adventure.js) + `heroCount` héros (équipe 'h') contre les gardiens du niveau (équipe 'e') ;
+   * `carry` = améliorations conservées des étages précédents. Évènements en plus : levelCleared {player, revived}, levelFailed {reason}.
+   */
+  constructor({ config, playerCount = 2, rng = Math.random, level = null, heroCount = 1, carry = null }) {
     super();
     this.cfg = config;
     this.rng = rng;
-    this.width = config.width;
-    this.height = config.height;
+    this.level = level;
+    this.heroCount = heroCount;
+    this.carry = carry;
+    this.width = level?.width ?? config.width;
+    this.height = level?.height ?? config.height;
+    if (level) playerCount = heroCount + level.enemies.length;
     this.playerCount = playerCount;
     this.wins = new Array(playerCount).fill(0);
     this.matchWinner = null;
@@ -29,8 +38,15 @@ export class BomberGame extends Emitter {
   startRound() {
     const c = this.cfg;
     this.round++;
-    this.layoutId = c.layout === 'random' ? LAYOUT_IDS[Math.floor(this.rng() * LAYOUT_IDS.length)] : (c.layout ?? 'classique');
-    this.cells = generateMap(c, this.rng, this.layoutId);
+    if (this.level) {
+      this.layoutId = 'tour';
+      this.cells = [...this.level.cells];
+    } else {
+      this.layoutId = c.layout === 'random' ? LAYOUT_IDS[Math.floor(this.rng() * LAYOUT_IDS.length)] : (c.layout ?? 'classique');
+      this.cells = generateMap(c, this.rng, this.layoutId);
+    }
+    this.exit = this.level?.door ?? null;
+    this.timeLimit = this.level?.time ?? 0;
     this.bombs = [];
     this.flames = [];
     this.items = new Map();
@@ -41,15 +57,20 @@ export class BomberGame extends Emitter {
     this.closingQueue = spiralOrder(this.width, this.height);
     this.closingTimer = 0;
     this.nextBombId = 1;
-    const spawns = spawnPoints(this.width, this.height, this.layoutId);
-    this.players = Array.from({ length: this.playerCount }, (_, i) => {
-      const s = spawns[i];
-      return {
-        id: i, x: s.x, y: s.y, tx: s.x, ty: s.y, prog: 0, dir: { dx: s.dx, dy: s.dy }, intent: { dx: 0, dy: 0 },
-        alive: true, frozen: 0, slowT: 0, hasteT: 0, forced: null, power: null,
-        bombsMax: c.player.bombs, range: c.player.range, speed: c.player.speed,
-      };
+    const newPlayer = (i, x, y, dx, dy, team) => ({
+      id: i, team, x, y, tx: x, ty: y, prog: 0, dir: { dx, dy }, intent: { dx: 0, dy: 0 },
+      alive: true, frozen: 0, slowT: 0, hasteT: 0, forced: null, power: null,
+      bombsMax: c.player.bombs, range: c.player.range, speed: c.player.speed,
     });
+    if (this.level) {
+      this.players = [
+        ...this.level.heroes.slice(0, this.heroCount).map((s, i) => Object.assign(newPlayer(i, s.x, s.y, 1, 0, 'h'), this.carry?.[i])),
+        ...this.level.enemies.map((e, k) => Object.assign(newPlayer(this.heroCount + k, e.x, e.y, -1, 0, 'e'), { enemyLevel: e.level })),
+      ];
+    } else {
+      const spawns = spawnPoints(this.width, this.height, this.layoutId);
+      this.players = Array.from({ length: this.playerCount }, (_, i) => newPlayer(i, spawns[i].x, spawns[i].y, spawns[i].dx, spawns[i].dy, i));
+    }
     this.emit('roundStart', { round: this.round, layout: this.layoutId });
   }
 
@@ -87,6 +108,11 @@ export class BomberGame extends Emitter {
       return c.x === x && c.y === y;
     });
   }
+  /** Améliorations des héros à conserver d'un étage à l'autre. */
+  heroStats() {
+    return this.players.filter((p) => p.team === 'h').map(({ bombsMax, range, speed }) => ({ bombsMax, range, speed }));
+  }
+
   get alivePlayers() { return this.players.filter((p) => p.alive); }
   speedOf(p) {
     const pw = this.cfg.powers;
@@ -217,7 +243,28 @@ export class BomberGame extends Emitter {
       else this.pickUp(p, c);
     });
     if (this.state === 'playing') this.updateClosing(dt);
-    this.checkEnd(dt);
+    if (this.level) this.checkLevel();
+    else this.checkEnd(dt);
+  }
+
+  /** Aventure : un héros sur la porte = étage franchi (tous reviennent à la vie à l'étage suivant) ; plus de héros ou temps écoulé = échec. */
+  checkLevel() {
+    if (this.state !== 'playing') return;
+    const heroes = this.players.filter((p) => p.team === 'h');
+    const onExit = heroes.find((p) => {
+      const c = this.cellOf(p);
+      return p.alive && c.x === this.exit.x && c.y === this.exit.y;
+    });
+    if (onExit) {
+      this.state = 'cleared';
+      this.emit('levelCleared', { player: onExit.id, revived: heroes.filter((p) => !p.alive).length });
+    } else if (!heroes.some((p) => p.alive)) {
+      this.state = 'failed';
+      this.emit('levelFailed', { reason: 'dead' });
+    } else if (this.timeLimit && this.time >= this.timeLimit) {
+      this.state = 'failed';
+      this.emit('levelFailed', { reason: 'time' });
+    }
   }
 
   movePlayer(p, dt) {

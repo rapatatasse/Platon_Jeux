@@ -119,7 +119,7 @@ export default function platonSeo({ siteUrl = process.env.SITE_URL || DEFAULT_SI
       this.emitFile({
         type: 'asset',
         fileName: 'sitemap.xml',
-        source: `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `  <url><loc>${esc(abs(u))}</loc></url>`).join('\n')}\n</urlset>\n`,
+        source: `<?xml version="1.5" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `  <url><loc>${esc(abs(u))}</loc></url>`).join('\n')}\n</urlset>\n`,
       });
       this.emitFile({ type: 'asset', fileName: 'robots.txt', source: `User-agent: *\nAllow: /\nSitemap: ${abs('/sitemap.xml')}\n` });
       const llms = [

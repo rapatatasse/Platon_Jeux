@@ -273,11 +273,11 @@ game.on('moved', (m) => {
 });
 game.on('saved', () => sounds.saved());
 game.on('crush', () => sounds.crunch());
-game.on('over', ({ winner, saved }) => {
+game.on('over', ({ winner, saved, decided }) => {
   const show = () => (battling || animating ? setTimeout(show, 300) : setTimeout(() => {
     sounds.win();
     $('final-title').textContent = winner === null ? 'Égalité !' : `${PLAYER_NAMES[winner]} gagne (${label(winner)}) !`;
-    $('final-score').textContent = `Pions sauvés : Noir ${saved[0]} - Rouge ${saved[1]}.`;
+    $('final-score').textContent = `Pions sauvés : Noir ${saved[0]} - Rouge ${saved[1]}.${decided ? ` ${PLAYER_NAMES[1 - winner]} ne peut plus égaliser.` : ''}`;
     $('final').hidden = false;
   }, 700));
   show();

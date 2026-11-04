@@ -459,7 +459,7 @@ test("robot : bien placé mais en attente (délai entre deux sortilèges), il re
   g.setCell(12, 11, WALL); g.setCell(13, 10, WALL);
   const bot = new Bot(g, 0, { ...BOT_LEVELS.facile, blunder: 0 });
   bot.bombReady = 10;
-  assert.equal(countReversals(g, [bot], 4), 0);
+  assert.equal(countReversals(g, [bot], 2), 0);
   assert.deepEqual([g.players[0].x, g.players[0].y], [3, 1]);
 });
 
@@ -475,4 +475,125 @@ test('robot : même avec un délai de réaction long, il ne dépasse pas sa case
     if (k !== last) { steps++; last = k; }
   }
   assert.ok(steps <= 12, `déplacements : ${steps}`);
+});
+
+test('robot : bloqué sans bouger, il est forcé de sortir de son coin en L, de lancer un sortilège puis de repartir', () => {
+  const g = make();
+  clear(g);
+  // coin en L : seules (1,1), (2,1) et (1,2) sont libres, des blocs partout autour
+  for (let y = 1; y <= 4; y++) for (let x = 1; x <= 4; x++) {
+    if ((x === 1 && y === 1) || (x === 2 && y === 1) || (x === 1 && y === 2)) continue;
+    if (g.cell(x, y) === FLOOR) g.setCell(x, y, BLOCK);
+  }
+  g.players[1].x = g.players[1].tx = 13; g.players[1].y = g.players[1].ty = 11;
+  g.setCell(12, 11, WALL); g.setCell(13, 10, WALL);
+  const bot = new Bot(g, 0, { ...BOT_LEVELS.facile, blunder: 0, bombDelay: 99 });
+  bot.bombReady = 99;
+  let placed = null, moved = false;
+  g.on('bombPlaced', () => { placed ??= g.time; });
+  for (let t = 0; t < 12; t += 1 / 60) {
+    bot.update(1 / 60); g.update(1 / 60);
+    if (g.players[0].x !== 1 || g.players[0].y !== 1) moved = true;
+  }
+  assert.ok(moved, 'il sort de sa case');
+  assert.ok(placed !== null && placed < 9, `il lance un sortilège (${placed})`);
+  assert.equal(g.players[0].alive, true, 'et survit');
+});
+
+import { LEVELS, buildLevel, AdventureRun } from '../src/games/bomberhero/core/adventure.js';
+import { ENEMY_LEVELS } from '../src/games/bomberhero/config.js';
+
+test('aventure : chaque étage est jouable (départs, gardiens et porte sur le sol, tout est atteignable)', () => {
+  assert.ok(LEVELS.length >= 8);
+  LEVELS.forEach((def, i) => {
+    const L = buildLevel(def, i);
+    const at = (p) => L.cells[p.y * L.width + p.x];
+    assert.equal(L.cells.length, L.width * L.height);
+    for (let x = 0; x < L.width; x++) { assert.equal(L.cells[x], WALL); assert.equal(L.cells[(L.height - 1) * L.width + x], WALL); }
+    L.heroes.forEach((h) => assert.equal(at(h), FLOOR, `${def.name} : départ libre`));
+    L.enemies.forEach((e) => { assert.equal(at(e), FLOOR, `${def.name} : gardien sur le sol`); assert.ok(ENEMY_LEVELS[e.level], 'niveau de gardien connu'); });
+    assert.equal(at(L.door), FLOOR, `${def.name} : porte sur le sol`);
+    const seen = reachable(L.cells, L.width, L.height, L.heroes[0]);
+    assert.ok(seen.has(`${L.door.x},${L.door.y}`), `${def.name} : porte atteignable`);
+    L.heroes.forEach((h) => assert.ok(seen.has(`${h.x},${h.y}`), `${def.name} : héros reliés`));
+    L.enemies.forEach((e) => assert.ok(seen.has(`${e.x},${e.y}`), `${def.name} : gardiens atteignables`));
+    L.enemies.forEach((e) => assert.ok(Math.abs(e.x - L.heroes[0].x) + Math.abs(e.y - L.heroes[0].y) >= 5, `${def.name} : pas de gardien collé au départ`));
+    assert.ok(L.cells.filter((c) => c === CHEST).length >= 2, `${def.name} : des coffres`);
+  });
+});
+
+test('aventure : la difficulté augmente d\'étage en étage et certains étages sont chronométrés', () => {
+  const strength = (def) => def.enemies.reduce((s, e) => s + Number(e[2]), 0);
+  for (let i = 1; i < LEVELS.length; i++) assert.ok(strength(LEVELS[i]) >= strength(LEVELS[i - 1]), `étage ${i + 1}`);
+  assert.ok(strength(LEVELS.at(-1)) > 2 * strength(LEVELS[0]));
+  assert.ok(LEVELS.filter((d) => d.time > 0).length >= 3);
+  assert.ok(LEVELS.at(-1).enemies.length > LEVELS[0].enemies.length);
+});
+
+test('aventure : un héros sur la porte franchit l\'étage, les deux joueurs reviennent à la vie à l\'étage suivant', () => {
+  const run = new AdventureRun({ heroCount: 2 });
+  const g = run.createGame(GAME, seeded(3));
+  assert.deepEqual(g.players.slice(0, 2).map((p) => p.team), ['h', 'h']);
+  assert.ok(g.players.slice(2).every((p) => p.team === 'e'));
+  assert.equal(g.players.length, 2 + LEVELS[0].enemies.length);
+  g.kill(g.players[1]);
+  g.players[0].bombsMax = 3;
+  const events = [];
+  g.on('levelCleared', (e) => events.push(e));
+  g.players[0].x = g.players[0].tx = g.exit.x; g.players[0].y = g.players[0].ty = g.exit.y;
+  g.update(0.016);
+  assert.equal(g.state, 'cleared');
+  assert.equal(events[0].revived, 1);
+  assert.equal(run.win(g), 'next');
+  const next = run.createGame(GAME, seeded(3));
+  assert.ok(next.players.slice(0, 2).every((p) => p.alive), 'les deux héros sont en vie');
+  assert.equal(next.players[0].bombsMax, 3, 'améliorations conservées');
+  assert.equal(run.index, 1);
+});
+
+test('aventure : tous les héros à terre ou temps écoulé = échec, les vies sont comptées', () => {
+  const run = new AdventureRun({ heroCount: 2, startLevel: 2, lives: 2 });
+  let g = run.createGame(GAME, seeded(1));
+  const fails = [];
+  g.on('levelFailed', (e) => fails.push(e.reason));
+  g.kill(g.players[0]);
+  g.update(0.016);
+  assert.equal(g.state, 'playing', 'un héros reste debout');
+  g.kill(g.players[1]);
+  g.update(0.016);
+  assert.equal(g.state, 'failed');
+  assert.equal(run.lose(), 'retry');
+  g = run.createGame(GAME, seeded(1));
+  g.on('levelFailed', (e) => fails.push(e.reason));
+  assert.ok(g.timeLimit > 0);
+  g.time = g.timeLimit;
+  g.update(0.016);
+  assert.deepEqual(fails, ['dead', 'time']);
+  assert.equal(run.lose(), 'gameover');
+});
+
+test('aventure : la dernière porte donne la victoire', () => {
+  const run = new AdventureRun({ heroCount: 1, startLevel: LEVELS.length - 1 });
+  const g = run.createGame(GAME, seeded(1));
+  assert.equal(run.win(g), 'victory');
+});
+
+test('aventure : les gardiens dorment jusqu\'à ce qu\'un héros approche, et ne s\'attaquent pas entre eux', () => {
+  const run = new AdventureRun({ heroCount: 1 });
+  const g = run.createGame(GAME, seeded(2));
+  const enemy = g.players[1];
+  const bot = new Bot(g, enemy.id, { ...BOT_LEVELS.normal, aggro: 4 });
+  const start = [enemy.x, enemy.y];
+  play(g, [bot], 2);
+  assert.deepEqual([enemy.x, enemy.y], start, 'il dort');
+  assert.equal(bot.awake, false);
+  assert.ok(!bot.enemies(enemy).some((q) => q.team === 'e'), 'ne cible pas un autre gardien');
+  g.players[0].x = g.players[0].tx = enemy.x - 2; g.players[0].y = g.players[0].ty = enemy.y;
+  play(g, [bot], 0.2);
+  assert.equal(bot.awake, true);
+});
+
+test('combat : chaque joueur est dans sa propre équipe', () => {
+  const g = make(3);
+  assert.deepEqual(g.players.map((p) => p.team), [0, 1, 2]);
 });

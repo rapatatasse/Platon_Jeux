@@ -106,3 +106,5 @@ body.bomber {
 .maps button { display: grid; justify-items: center; gap: 4px; min-width: 84px; padding: 8px 10px; font: 13px var(--ui); letter-spacing: 0.04em; }
 .maps button canvas { width: 60px; height: 52px; border: 1px solid var(--line); border-radius: 2px; image-rendering: pixelated; }
 #level-choice button { font: 18px var(--serif); padding: 7px 16px; }
+#floor-choice { flex-wrap: wrap; justify-content: center; }
+#floor-choice button { min-width: 44px; padding: 8px 12px; font-size: 20px; }

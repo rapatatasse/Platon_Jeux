@@ -49,6 +49,10 @@ export const BOT_LEVELS = {
   difficile: { name: 'Difficile', think: 0.05, speed: 1,    blunder: 0,    bombDelay: 0,   powerDelay: 0 },
 };
 
+/** Niveau des gardiens du mode Aventure (caractère utilisé dans la description des étages). */
+export const ENEMY_LEVELS = { 1: 'facile', 2: 'normal', 3: 'difficile' };
+export const ENEMY_COLOR = '#9b59d0';
+
 export const POWER_IDS = Object.keys(POWERS);
 
 /**

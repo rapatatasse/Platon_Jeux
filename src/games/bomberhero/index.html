@@ -25,18 +25,26 @@
         <div class="panel">
           <p class="kicker">Platon Jeux</p>
           <h2 id="menu-title">Bomber Hero</h2>
-          <p class="lead">Brise les murs du château à coups de sortilèges, ouvre les coffres et reste le dernier magicien debout.</p>
+          <p id="menu-lead" class="lead">Brise les murs du château à coups de sortilèges, ouvre les coffres et reste le dernier magicien debout.</p>
+          <div class="field">
+            <span class="label">Mode</span>
+            <div id="kind-choice" class="choice" role="radiogroup" aria-label="Mode de jeu"></div>
+          </div>
           <div class="field roster">
             <div><span class="label">Joueurs humains</span><div id="human-choice" class="choice" role="radiogroup" aria-label="Nombre de joueurs humains"></div></div>
-            <div><span class="label">Robots</span><div id="bot-choice" class="choice" role="radiogroup" aria-label="Nombre de robots"></div></div>
+            <div id="bot-col"><span class="label">Robots</span><div id="bot-choice" class="choice" role="radiogroup" aria-label="Nombre de robots"></div></div>
           </div>
-          <div class="field">
+          <div id="map-field" class="field">
             <span class="label">Carte</span>
             <div id="map-choice" class="choice maps" role="radiogroup" aria-label="Carte"></div>
           </div>
           <div id="level-field" class="field" hidden>
             <span class="label">Difficulté des robots</span>
             <div id="level-choice" class="choice" role="radiogroup" aria-label="Difficulté des robots"></div>
+          </div>
+          <div id="floor-field" class="field" hidden>
+            <span class="label">Étage de départ</span>
+            <div id="floor-choice" class="choice" role="radiogroup" aria-label="Étage de départ"></div>
           </div>
           <div id="controls" class="controls-grid"></div>
           <p id="pads" class="pads"></p>
@@ -59,7 +67,7 @@
 
       <section id="final" class="overlay" aria-labelledby="final-title" hidden>
         <div class="panel small">
-          <p class="kicker">Victoire</p>
+          <p id="final-kicker" class="kicker">Victoire</p>
           <img id="final-hero" class="final-hero" alt="" />
           <h2 id="final-title"></h2>
           <p id="final-score" class="lead"></p>
